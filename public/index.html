@@ -3,463 +3,525 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100b19">
-<title>NiM — Chat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#100b18">
+<title>NiM — Next is Me</title>
 <script src="/socket.io/socket.io.js"></script>
 <style>
+:root{--bg:#100b18;--panel:#1b1225;--line:#392747;--pink:#ff67cf;--violet:#a66bff;--text:#fff7ff;--muted:#b9a9c7}
 *{box-sizing:border-box}
-body{margin:0;background:#100b19;color:#fff;font-family:Arial,sans-serif}
-header{padding:18px;background:#21152e;position:sticky;top:0;z-index:2;border-bottom:1px solid #49335b}
-h1{margin:0;color:#d9a4ff;font-size:25px}
-header p{margin:5px 0 0;color:#c4b5d0;font-size:13px}
-main{max-width:700px;margin:auto;padding:14px}
-.panel{background:#21182c;border:1px solid #453251;border-radius:18px;padding:15px;margin-bottom:14px}
-input,button{font:inherit}
-input{background:#130e1b;color:white;border:1px solid #51405f;border-radius:12px;padding:13px;width:100%;margin:5px 0 12px}
-button{background:#a45be8;color:white;border:0;border-radius:12px;padding:12px;cursor:pointer}
+body{margin:0;background:radial-gradient(ellipse at top,#301342,var(--bg) 55%);color:var(--text);font:15px system-ui,sans-serif;min-height:100dvh}
+button,input{font:inherit}
+button{cursor:pointer;border:0;border-radius:13px;padding:11px 14px;color:white;background:linear-gradient(120deg,#8244d9,#c541a8);font-weight:700}
 button:disabled{opacity:.5}
-.wide{width:100%}
-.row{display:flex;gap:8px;align-items:center}
-.row button{flex-shrink:0}
-#messages{height:45vh;min-height:240px;overflow:auto;display:flex;flex-direction:column;gap:10px}
-.msg{background:#342542;border-radius:14px;padding:10px;max-width:90%;overflow-wrap:anywhere}
-.mine{align-self:flex-end;background:#633b83}
-.name{font-size:11px;color:#e5b9ff;margin-bottom:5px}
-.time{font-size:10px;color:#c7b8d2;text-align:right;margin-top:5px}
-.system{text-align:center;color:#c5b1d5;font-size:12px}
-.msg img,.msg video{max-width:100%;border-radius:10px}
-.msg audio{max-width:100%;width:240px}
-.muted{font-size:12px;color:#c2b4ce}
-#toast{position:fixed;bottom:20px;left:5%;width:90%;text-align:center;background:#49315b;padding:12px;border-radius:12px;display:none;z-index:5}
-.hidden{display:none!important}
+input{min-width:0;width:100%;background:#100b18;border:1px solid var(--line);border-radius:13px;padding:12px;color:white;outline:none}
+input:focus{border-color:var(--violet)}
+.app{max-width:720px;margin:auto;min-height:100dvh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom)}
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 4px}
+.logo{font-size:29px;font-weight:950;letter-spacing:-1px;background:linear-gradient(90deg,#fff,#d5a1ff,#ff70ce);color:transparent;background-clip:text}
+.muted{color:var(--muted)}.small{font-size:12px}.hidden{display:none!important}
+.panel{background:#1b1225ed;border:1px solid var(--line);border-radius:22px;padding:15px}
+.stack{display:flex;flex-direction:column;gap:11px}
+.title{font-size:21px;font-weight:850;margin:3px 0 12px}
+.pill{font-size:11px;padding:5px 9px;border-radius:30px;background:#382447}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 0 calc(10px + env(safe-area-inset-bottom));position:sticky;bottom:0;background:#100b18f5;backdrop-filter:blur(16px);z-index:3}
+.tab{background:#24182e;border:1px solid var(--line);color:#cbbbd7}
+.tab.active{background:linear-gradient(120deg,#773cc2,#b83b9d);color:white}
+.list-item{width:100%;display:flex;align-items:center;gap:11px;text-align:left;background:#24182e;border:1px solid #402c50;border-radius:16px;padding:12px;color:white;margin:0 0 8px}
+.avatar{width:43px;height:43px;flex-shrink:0;border-radius:15px;display:grid;place-items:center;font-weight:900;background:linear-gradient(145deg,#7438b7,#ed5ab9)}
+.grow{flex:1}.online{color:#6ce9a0}
+.chathead{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.secondary,.iconbtn{background:#2b2037;border:1px solid var(--line)}
+.messages{height:min(53dvh,470px);min-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:9px;padding:8px 1px 14px}
+.bubble-row{max-width:84%;align-self:flex-start;display:flex;flex-direction:column}
+.bubble-row.mine{align-self:flex-end;align-items:flex-end}
+.bname{font-size:11px;color:var(--muted);margin:0 8px 3px}
+.bubble{padding:10px 13px;border-radius:17px 17px 17px 5px;background:var(--bubble,#3b2b4c);overflow-wrap:anywhere;white-space:pre-wrap}
+.mine .bubble{background:linear-gradient(135deg,#783cba,#a23b9e);border-radius:17px 17px 5px 17px}
+.bubble img,.bubble video{display:block;max-width:100%;max-height:260px;border-radius:10px}
+.bubble audio{max-width:220px}
+.meta{font-size:10px;color:#cbb9d8;margin:4px 7px 0}
+.compose{display:flex;gap:7px;align-items:center}
+.compose input{flex:1}
+.iconbtn{padding:10px 12px}
+.filelabel{background:#2b2037;border:1px solid var(--line);border-radius:13px;padding:10px;cursor:pointer}
+.filelabel input{display:none}
+.empty{text-align:center;padding:24px 8px;color:var(--muted)}
+.notice{font-size:12px;color:#d8bce9;line-height:1.5}
+.callbox{position:fixed;inset:0;z-index:10;background:#09060df7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px}
+.callbox video{width:min(92vw,540px);max-height:55dvh;background:#24182e;border-radius:20px;object-fit:cover}
+.call-actions{display:flex;gap:12px}
+.danger{background:#d63c62}
+#localVideo{width:125px;max-height:100px;position:absolute;right:18px;top:65px;border:1px solid #a66bff}
 </style>
 </head>
 <body>
+<div class="app">
 <header>
-  <h1>NiM ✦</h1>
-  <p id="status">Connexion au serveur…</p>
+  <div><div class="logo">NiM<span style="color:#ff70ce">.</span></div><div class="muted small">NEXT IS ME</div></div>
+  <span class="pill" id="status">Connexion…</span>
 </header>
+
 <main>
-  <section id="login" class="panel">
-    <h3>Rejoindre un salon</h3>
-    <form id="joinForm">
-      <label for="pseudo">Ton pseudo</label>
-      <input id="pseudo" maxlength="24" placeholder="Ex. Lolo" required>
-      <label for="room">Nom du salon</label>
-      <input id="room" maxlength="40" value="general" pattern="[a-zA-Z0-9_-]+" required>
-      <button class="wide" type="submit">Entrer dans le chat</button>
-    </form>
-    <p class="muted">Donne le même nom de salon à tes potes pour discuter ensemble.</p>
-  </section>
+<section id="login" class="panel stack">
+  <div class="title">Bienvenue sur NiM 💜</div>
+  <div class="muted">Connecte-toi avec ton pseudo et choisis un salon.</div>
+  <input id="pseudo" maxlength="20" placeholder="Ton pseudo">
+  <input id="roomInput" maxlength="32" value="general" placeholder="Salon de départ">
+  <button id="enterBtn">Entrer sur NiM</button>
+  <div class="notice">Les messages sont temporaires. Les pseudos ne sont pas des comptes sécurisés : ne partage pas d'informations personnelles.</div>
+</section>
 
-  <section id="chat" class="hidden">
-    <div class="panel">
-      <div class="row">
-        <div style="flex:1">
-          <strong id="roomTitle">Salon</strong>
-          <p id="people" class="muted">0 personne</p>
-        </div>
-        <button id="callBtn">📞 Appeler</button>
-        <button id="leaveBtn">Quitter</button>
-      </div>
-      <div id="callPanel" class="hidden">
-        <p id="callStatus" class="muted">Appel audio</p>
-        <button id="muteBtn">Couper micro</button>
-        <button id="hangBtn">Raccrocher</button>
-        <div id="remoteAudio"></div>
-      </div>
+<section id="inside" class="hidden">
+  <section id="messagesPage" class="panel">
+    <div id="dmListPage">
+      <div class="title">Messages privés 💬</div>
+      <div class="muted small" style="margin-bottom:12px">Appuie sur une personne en ligne pour discuter en privé.</div>
+      <div id="onlineList"></div>
+      <div id="dmList"></div>
     </div>
-
-    <div id="messages" class="panel" aria-live="polite"></div>
-
-    <div class="panel">
-      <form id="sendForm" class="row">
-        <input id="message" placeholder="Écris un message…" maxlength="2000" autocomplete="off" style="margin:0;min-width:0">
-        <button type="submit">➤</button>
-      </form>
-      <div class="row" style="margin-top:10px">
-        <button id="photoBtn">📷 Photo / vidéo</button>
-        <button id="voiceBtn">🎙 Vocal</button>
+    <div id="dmChatPage" class="hidden">
+      <div class="chathead">
+        <button class="secondary" id="backDm">←</button>
+        <div class="avatar" id="dmAvatar">N</div>
+        <div class="grow"><b id="dmTitle">Conversation</b><div class="muted small">Privé · 1 à 1</div></div>
+        <button class="iconbtn" id="audioCall" title="Appel audio">☎</button>
+        <button class="iconbtn" id="videoCall" title="Appel vidéo">▣</button>
       </div>
-      <p id="recordStatus" class="muted"></p>
-      <input id="mediaFile" class="hidden" type="file" accept="image/*,video/mp4,video/webm,video/quicktime">
+      <div id="dmMessages" class="messages"></div>
+      <div class="compose">
+        <label class="filelabel">＋<input id="dmFile" type="file" accept="image/*,video/*"></label>
+        <button class="iconbtn" id="dmVoice" title="Vocal">🎙</button>
+        <input id="dmText" placeholder="Écrire un message…">
+        <button id="dmSend">➤</button>
+      </div>
+      <div class="muted small" style="margin-top:7px">Vocal : 15 secondes maximum.</div>
     </div>
   </section>
+
+  <section id="salonsPage" class="panel hidden">
+    <div id="roomListPage">
+      <div class="title">Salons 👥</div>
+      <div class="muted small" style="margin-bottom:12px">Choisis un salon ou crée le tien.</div>
+      <div id="roomChoices"></div>
+      <div class="compose"><input id="newRoom" placeholder="Nom d'un salon"><button id="joinCustom">Rejoindre</button></div>
+    </div>
+    <div id="roomChatPage" class="hidden">
+      <div class="chathead">
+        <button class="secondary" id="backRoom">←</button>
+        <div class="avatar">#</div>
+        <div class="grow"><b id="roomTitle">Salon</b><div id="roomCount" class="muted small"></div></div>
+      </div>
+      <div id="roomPeople" class="muted small" style="margin-bottom:9px"></div>
+      <div id="roomMessages" class="messages"></div>
+      <div class="compose">
+        <label class="filelabel">＋<input id="roomFile" type="file" accept="image/*,video/*"></label>
+        <button class="iconbtn" id="roomVoice">🎙</button>
+        <input id="roomText" placeholder="Écrire au salon…">
+        <button id="roomSend">➤</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="profilePage" class="panel hidden">
+    <div class="title">Mon profil</div>
+    <div style="font-size:48px;text-align:center;padding:15px">🪩</div>
+    <div id="profileName" style="font-size:23px;font-weight:850;text-align:center"></div>
+    <div class="muted" style="text-align:center;margin:8px 0 22px">Membre de NiM</div>
+    <div class="list-item"><div class="avatar">💬</div><div><b>Messages</b><div class="muted small">Discussions privées et appels.</div></div></div>
+    <div class="list-item"><div class="avatar">👥</div><div><b>Salons</b><div class="muted small">Discussions de groupe.</div></div></div>
+    <button class="secondary" id="logout" style="width:100%">Se déconnecter</button>
+  </section>
+</section>
 </main>
-<div id="toast"></div>
+
+<nav id="nav" class="tabs hidden">
+  <button class="tab active" data-page="messages">💬 Messages</button>
+  <button class="tab" data-page="salons">👥 Salons</button>
+  <button class="tab" data-page="profile">👤 Profil</button>
+</nav>
+</div>
+
+<div id="callbox" class="callbox hidden">
+  <div class="title" id="callTitle">Appel NiM</div>
+  <div id="callState" class="muted">Connexion…</div>
+  <video id="remoteVideo" autoplay playsinline></video>
+  <video id="localVideo" autoplay muted playsinline class="hidden"></video>
+  <div class="call-actions">
+    <button id="acceptCall" class="hidden">Répondre</button>
+    <button id="hangup" class="danger">Raccrocher</button>
+  </div>
+  <div class="notice">Certains réseaux peuvent bloquer les appels sans serveur TURN.</div>
+</div>
 
 <script>
 const socket = io();
 const $ = id => document.getElementById(id);
 
-let myName = "", myRoom = "", joined = false;
-let recorder = null, recordingStream = null, chunks = [], recordTimer = null;
-let localStream = null, inCall = false, muted = false;
-const peers = new Map();
+let myName = "";
+let currentRoom = "general";
+let currentPage = "messages";
+let onlineUsers = [];
+let dmList = [];
+let activeDm = null;
+let activeDmName = "";
+let roomHistory = [];
+let dmHistory = [];
+let mediaRecorder = null;
+let pc = null;
+let localStream = null;
+let callTarget = null;
+let callDmId = null;
+let pendingOffer = null;
+let callMode = "audio";
 
-function notify(text) {
-  $("toast").textContent = text;
-  $("toast").style.display = "block";
-  clearTimeout(notify.timer);
-  notify.timer = setTimeout(() => $("toast").style.display = "none", 3000);
+const colors = ["#3a2d50","#243e52","#4a2b3e","#28443d","#514027","#303d60","#563452","#2e4a4c"];
+
+function colorFor(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return colors[h % colors.length];
 }
 
-socket.on("connect", () => $("status").textContent = "🟢 Connecté au serveur");
-socket.on("disconnect", () => $("status").textContent = "🔴 Reconnexion…");
-socket.on("connect_error", () => $("status").textContent = "Connexion impossible");
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
 
-$("joinForm").addEventListener("submit", event => {
-  event.preventDefault();
-  myName = $("pseudo").value.trim();
-  myRoom = $("room").value.trim();
+function timeOf(time) {
+  return new Date(time).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+}
 
-  if (!myName) return notify("Entre un pseudo.");
-  if (!/^[a-zA-Z0-9_-]{1,40}$/.test(myRoom)) {
-    return notify("Nom de salon invalide : utilise lettres, chiffres, _ ou -.");
-  }
-  if (!socket.connected) return notify("Le serveur n'est pas connecté. Réessaie dans quelques secondes.");
+function showPage(page) {
+  currentPage = page;
+  ["messages","salons","profile"].forEach(p =>
+    $(p + "Page").classList.toggle("hidden", p !== page)
+  );
+  document.querySelectorAll(".tab").forEach(b =>
+    b.classList.toggle("active", b.dataset.page === page)
+  );
+  if (page === "messages") renderPeople();
+}
 
-  socket.emit("join-room", { name: myName, room: myRoom });
+$("enterBtn").onclick = () => {
+  const name = $("pseudo").value.trim();
+  const room = $("roomInput").value.trim() || "general";
+  if (!name) return $("pseudo").focus();
+  socket.emit("join", {name, room});
+};
+
+$("pseudo").addEventListener("keydown", e => {
+  if (e.key === "Enter") $("enterBtn").click();
 });
 
-socket.on("join-error", message => notify(message));
+socket.on("connect", () => $("status").textContent = "Connecté");
+socket.on("disconnect", () => $("status").textContent = "Déconnecté");
+socket.on("error-message", message => alert(message));
 
 socket.on("joined", data => {
   myName = data.name;
-  myRoom = data.room;
-  joined = true;
+  currentRoom = data.room;
+  roomHistory = data.history || [];
   $("login").classList.add("hidden");
-  $("chat").classList.remove("hidden");
-  $("roomTitle").textContent = "#" + myRoom;
-  $("status").textContent = "🟢 Connecté comme " + myName;
-  notify("Bienvenue dans #" + myRoom + " !");
+  $("inside").classList.remove("hidden");
+  $("nav").classList.remove("hidden");
+  $("profileName").textContent = myName;
+  $("roomTitle").textContent = "# " + currentRoom;
+  renderRoomMessages();
+  showPage("messages");
 });
 
-socket.on("history", list => {
-  $("messages").replaceChildren();
-  (list || []).forEach(renderMessage);
-  scrollDown();
+socket.on("room-users", list => {
+  onlineUsers = list || [];
+  renderPeople();
+  renderRoomPeople();
 });
 
-socket.on("new-message", message => {
-  renderMessage(message);
-  scrollDown();
+socket.on("room-message", msg => {
+  roomHistory.push(msg);
+  if (roomHistory.length > 50) roomHistory.shift();
+  renderRoomMessages();
 });
 
-socket.on("member-count", count => {
-  $("people").textContent = count + (count > 1 ? " personnes connectées" : " personne connectée");
+socket.on("dm-list", list => {
+  dmList = list || [];
+  renderDmList();
 });
 
-socket.on("member-left", data => {
-  if (data?.name) notify(data.name + " a quitté le salon.");
+socket.on("dm-opened", data => openDm(data.id, data.name, data.history || []));
+
+socket.on("dm-available", data => {
+  if (!dmList.some(x => x.id === data.id)) dmList.unshift(data);
+  renderDmList();
 });
 
-function scrollDown() {
-  $("messages").scrollTop = $("messages").scrollHeight;
+socket.on("dm-message", data => {
+  const item = dmList.find(x => x.id === data.id);
+  if (item) {
+    item.history = item.history || [];
+    item.history.push(data.msg);
+    if (item.history.length > 50) item.history.shift();
+  }
+
+  if (activeDm === data.id) {
+    dmHistory.push(data.msg);
+    if (dmHistory.length > 50) dmHistory.shift();
+    renderDmMessages();
+    if (data.msg.senderId !== socket.id) {
+      socket.emit("dm-read", {id: activeDm});
+    }
+  }
+  renderDmList();
+});
+
+socket.on("dm-message-status", data => {
+  const item = dmList.find(x => x.id === data.id);
+  if (item && item.history) {
+    const message = item.history.find(x => x.id === data.messageId);
+    if (message) message.status = data.status;
+  }
+
+  if (activeDm === data.id) {
+    const message = dmHistory.find(x => x.id === data.messageId);
+    if (message) message.status = data.status;
+    renderDmMessages();
+  }
+});
+
+socket.on("dm-ended", data => {
+  if (activeDm === data.id) {
+    activeDm = null;
+    $("dmChatPage").classList.add("hidden");
+    $("dmListPage").classList.remove("hidden");
+  }
+  dmList = dmList.filter(x => x.id !== data.id);
+  renderDmList();
+});
+
+document.querySelectorAll(".tab").forEach(button => {
+  button.onclick = () => {
+    showPage(button.dataset.page);
+    $("dmChatPage").classList.add("hidden");
+    $("dmListPage").classList.remove("hidden");
+    $("roomChatPage").classList.add("hidden");
+    $("roomListPage").classList.remove("hidden");
+  };
+});
+
+function renderPeople() {
+  const box = $("onlineList");
+  box.innerHTML = "";
+
+  onlineUsers.filter(user => user.id !== socket.id).forEach(user => {
+    const button = document.createElement("button");
+    button.className = "list-item";
+    button.innerHTML = `
+      <div class="avatar">${escapeHtml(user.name.slice(0,1).toUpperCase())}</div>
+      <div class="grow"><b>${escapeHtml(user.name)}</b>
+      <div class="muted small"><span class="online">●</span> En ligne · Appuyer pour écrire</div></div>
+      <span>›</span>`;
+    button.onclick = () => socket.emit("start-dm", user.id);
+    box.appendChild(button);
+  });
+
+  if (!box.children.length) {
+    box.innerHTML = '<div class="empty">Personne d’autre en ligne dans ce salon pour le moment 👀</div>';
+  }
 }
 
-function renderMessage(m) {
-  if (!m) return;
-  const box = $("messages");
-  const el = document.createElement("div");
+function renderDmList() {
+  const box = $("dmList");
+  box.innerHTML = dmList.length ? '<div class="title" style="margin-top:16px">Conversations</div>' : "";
 
-  if (m.type === "system") {
-    el.className = "system";
-    el.textContent = m.text || "";
-    box.appendChild(el);
-    return;
-  }
+  dmList.forEach(chat => {
+    const button = document.createElement("button");
+    button.className = "list-item";
+    const last = (chat.history || []).slice(-1)[0];
+    const preview = last
+      ? (last.type === "text" ? last.content : "📎 Média")
+      : "Conversation privée";
 
-  el.className = "msg" + (m.name === myName ? " mine" : "");
+    button.innerHTML = `
+      <div class="avatar">${escapeHtml((chat.name || "?").slice(0,1).toUpperCase())}</div>
+      <div class="grow"><b>${escapeHtml(chat.name || "Contact")}</b>
+      <div class="muted small">${escapeHtml(preview)}</div></div><span>›</span>`;
+    button.onclick = () => openDm(chat.id, chat.name, chat.history || []);
+    box.appendChild(button);
+  });
+}
 
-  if (m.name) {
-    const name = document.createElement("div");
-    name.className = "name";
-    name.textContent = m.name;
-    el.appendChild(name);
-  }
+function openDm(id, name, history) {
+  activeDm = id;
+  activeDmName = name;
+  dmHistory = [...history];
+  $("dmTitle").textContent = name;
+  $("dmAvatar").textContent = (name || "?").slice(0,1).toUpperCase();
+  $("dmListPage").classList.add("hidden");
+  $("dmChatPage").classList.remove("hidden");
+  renderDmMessages();
+  socket.emit("dm-read", {id});
+}
 
-  if (m.type === "image" || m.type === "video") {
-    const media = document.createElement(m.type === "image" ? "img" : "video");
-    media.src = m[m.type];
-    media.alt = m.type === "image" ? "Photo partagée" : "Vidéo partagée";
-    if (m.type === "video") {
-      media.controls = true;
-      media.playsInline = true;
-    }
-    el.appendChild(media);
-  } else if (m.type === "audio") {
-    const audio = document.createElement("audio");
-    audio.controls = true;
-    audio.src = m.audio;
-    el.appendChild(audio);
+function messageHtml(message, privateMode) {
+  const mine = message.senderId === socket.id;
+  let body = "";
+
+  if (message.type === "image") {
+    body = `<img src="${message.content}" alt="Photo">`;
+  } else if (message.type === "video") {
+    body = `<video src="${message.content}" controls playsinline></video>`;
+  } else if (message.type === "audio") {
+    body = `<audio src="${message.content}" controls></audio>`;
   } else {
-    const text = document.createElement("div");
-    text.textContent = m.text || "";
-    el.appendChild(text);
+    body = escapeHtml(message.content);
   }
 
-  const time = document.createElement("div");
-  time.className = "time";
-  time.textContent = new Date(m.time || Date.now()).toLocaleTimeString("fr-FR", {
-    hour: "2-digit", minute: "2-digit"
-  });
-  el.appendChild(time);
-  box.appendChild(el);
+  const status = privateMode && mine
+    ? " · " + escapeHtml(message.status || "Envoyé")
+    : "";
+
+  return `<div class="bubble-row ${mine ? "mine" : ""}">
+    <div class="bname">${mine ? "Toi" : escapeHtml(message.sender)}</div>
+    <div class="bubble" style="${mine ? "" : "--bubble:" + colorFor(message.sender)}">${body}</div>
+    <div class="meta">${timeOf(message.time)}${status}</div>
+  </div>`;
 }
 
-$("sendForm").addEventListener("submit", event => {
-  event.preventDefault();
-  const text = $("message").value.trim();
-  if (!joined) return notify("Rejoins d'abord un salon.");
-  if (!text) return;
-  socket.emit("send-message", { type: "text", text });
-  $("message").value = "";
+function renderDmMessages() {
+  $("dmMessages").innerHTML = dmHistory.map(m => messageHtml(m, true)).join("");
+  $("dmMessages").scrollTop = $("dmMessages").scrollHeight;
+}
+
+function renderRoomMessages() {
+  $("roomMessages").innerHTML = roomHistory.map(m => messageHtml(m, false)).join("");
+  $("roomMessages").scrollTop = $("roomMessages").scrollHeight;
+}
+
+function renderRoomPeople() {
+  $("roomPeople").textContent = onlineUsers.map(user => user.name).join(" · ");
+  $("roomCount").textContent = onlineUsers.length + (onlineUsers.length > 1 ? " personnes" : " personne");
+}
+
+function sendText(privateMode) {
+  const field = $(privateMode ? "dmText" : "roomText");
+  const content = field.value.trim();
+  if (!content) return;
+
+  if (privateMode && activeDm) {
+    socket.emit("send-dm-message", {id:activeDm,type:"text",content});
+  } else if (!privateMode) {
+    socket.emit("send-room-message", {type:"text",content});
+  }
+
+  field.value = "";
+}
+
+$("dmSend").onclick = () => sendText(true);
+$("roomSend").onclick = () => sendText(false);
+$("dmText").addEventListener("keydown", e => {if(e.key==="Enter")sendText(true)});
+$("roomText").addEventListener("keydown", e => {if(e.key==="Enter")sendText(false)});
+
+$("backDm").onclick = () => {
+  $("dmChatPage").classList.add("hidden");
+  $("dmListPage").classList.remove("hidden");
+  activeDm = null;
+};
+
+$("backRoom").onclick = () => {
+  $("roomChatPage").classList.add("hidden");
+  $("roomListPage").classList.remove("hidden");
+};
+
+function showRoom(room) {
+  currentRoom = room;
+  roomHistory = [];
+  socket.emit("join", {name:myName,room});
+  $("roomTitle").textContent = "# " + room;
+  $("roomListPage").classList.add("hidden");
+  $("roomChatPage").classList.remove("hidden");
+}
+
+["general","gaming","basket","musique","random"].forEach(room => {
+  const button = document.createElement("button");
+  button.className = "list-item";
+  button.innerHTML = `<div class="avatar">#</div><div class="grow"><b>${room}</b><div class="muted small">Salon de discussion</div></div><span>›</span>`;
+  button.onclick = () => showRoom(room);
+  $("roomChoices").appendChild(button);
 });
 
-$("photoBtn").addEventListener("click", () => {
-  if (!joined) return notify("Rejoins d'abord un salon.");
-  $("mediaFile").click();
-});
+$("joinCustom").onclick = () => {
+  const room = $("newRoom").value.trim().replace(/[^a-zA-Z0-9_-]/g,"").slice(0,32);
+  if (room) {
+    showRoom(room);
+    $("newRoom").value = "";
+  }
+};
 
-$("mediaFile").addEventListener("change", async event => {
-  const file = event.target.files[0];
-  event.target.value = "";
+function sendFile(file, privateMode) {
   if (!file) return;
-  if (file.size > 2.5 * 1024 * 1024) {
-    return notify("Fichier trop lourd. Maximum 2,5 Mo.");
-  }
-
-  const isVideo = file.type.startsWith("video/");
-  if (!isVideo && !file.type.startsWith("image/")) {
-    return notify("Choisis une photo ou une vidéo.");
-  }
-
-  try {
-    let data;
-    if (isVideo) {
-      data = await readFile(file);
-    } else {
-      data = await compressPhoto(file);
-    }
-    if (data.length > 3900000) return notify("Fichier trop lourd.");
-    socket.emit("send-message", {
-      type: isVideo ? "video" : "image",
-      [isVideo ? "video" : "image"]: data
-    });
-    notify(isVideo ? "Vidéo envoyée 🎬" : "Photo envoyée 📷");
-  } catch {
-    notify("Impossible de lire ce fichier.");
-  }
-});
-
-function readFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-async function compressPhoto(file) {
-  const data = await readFile(file);
-  const img = new Image();
-  img.src = data;
-  await new Promise((resolve, reject) => {
-    img.onload = resolve;
-    img.onerror = reject;
-  });
-
-  const scale = Math.min(1, 1000 / Math.max(img.width, img.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(img.width * scale));
-  canvas.height = Math.max(1, Math.round(img.height * scale));
-  canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL("image/jpeg", 0.65);
-}
-
-$("voiceBtn").addEventListener("click", async () => {
-  if (!joined) return notify("Rejoins d'abord un salon.");
-
-  if (recorder?.state === "recording") {
-    recorder.stop();
+  if (file.size > 2800000) {
+    alert("Fichier trop lourd : choisis un fichier de moins de 2,8 Mo.");
     return;
   }
 
-  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
-    return notify("Ton navigateur ne permet pas d'enregistrer ici.");
-  }
+  const type = file.type.startsWith("image/") ? "image"
+    : file.type.startsWith("video/") ? "video" : null;
 
-  try {
-    recordingStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
-      .find(type => MediaRecorder.isTypeSupported(type));
-    recorder = mime ? new MediaRecorder(recordingStream, { mimeType: mime }) : new MediaRecorder(recordingStream);
-    chunks = [];
-
-    recorder.ondataavailable = event => {
-      if (event.data.size) chunks.push(event.data);
-    };
-
-    recorder.onstop = async () => {
-      clearTimeout(recordTimer);
-      $("voiceBtn").textContent = "🎙 Vocal";
-      $("recordStatus").textContent = "";
-      recordingStream?.getTracks().forEach(track => track.stop());
-
-      const blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
-      if (blob.size > 2 * 1024 * 1024) return notify("Vocal trop lourd.");
-      try {
-        const audio = await readFile(blob);
-        socket.emit("send-message", { type: "audio", audio });
-        notify("Vocal envoyé 🎙️");
-      } catch {
-        notify("Impossible de préparer le vocal.");
-      }
-    };
-
-    recorder.start();
-    $("voiceBtn").textContent = "⏹ Arrêter";
-    $("recordStatus").textContent = "Enregistrement… maximum 15 secondes";
-    recordTimer = setTimeout(() => {
-      if (recorder?.state === "recording") recorder.stop();
-    }, 15000);
-  } catch {
-    notify("Autorise l'accès au micro dans ton navigateur.");
-  }
-});
-
-// Appel audio de groupe (connexion directe entre les appareils)
-function makePeer(id) {
-  if (peers.has(id)) return peers.get(id);
-
-  const pc = new RTCPeerConnection({
-    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-  });
-  peers.set(id, pc);
-  localStream?.getTracks().forEach(track => pc.addTrack(track, localStream));
-
-  pc.onicecandidate = event => {
-    if (event.candidate) {
-      socket.emit("voice-signal", { to: id, signal: { candidate: event.candidate } });
-    }
-  };
-
-  pc.ontrack = event => {
-    let audio = document.getElementById("audio-" + id);
-    if (!audio) {
-      audio = document.createElement("audio");
-      audio.id = "audio-" + id;
-      audio.autoplay = true;
-      audio.controls = true;
-      $("remoteAudio").appendChild(audio);
-    }
-    audio.srcObject = event.streams[0];
-    audio.play().catch(() => {});
-  };
-
-  return pc;
-}
-
-async function offerTo(id) {
-  const pc = makePeer(id);
-  const offer = await pc.createOffer();
-  await pc.setLocalDescription(offer);
-  socket.emit("voice-signal", { to: id, signal: { description: pc.localDescription } });
-}
-
-$("callBtn").addEventListener("click", async () => {
-  if (!joined) return notify("Rejoins d'abord un salon.");
-  if (inCall) {
-    $("callPanel").classList.remove("hidden");
+  if (!type) {
+    alert("Choisis une image ou une vidéo.");
     return;
   }
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    inCall = true;
-    muted = false;
-    $("callPanel").classList.remove("hidden");
-    $("callStatus").textContent = "Connexion à l'appel…";
-    $("muteBtn").textContent = "Couper micro";
-    socket.emit("voice-join");
-  } catch {
-    notify("Autorise l'accès au micro pour appeler.");
-  }
-});
 
-socket.on("voice-peers", async ids => {
-  for (const id of ids || []) {
-    try { await offerTo(id); } catch (error) { console.error(error); }
-  }
-  $("callStatus").textContent = ids?.length ? "Connexion aux autres membres…" : "En attente de tes potes…";
-});
-
-socket.on("voice-peer-joined", () => {
-  $("callStatus").textContent = "Un membre rejoint l'appel…";
-});
-
-socket.on("voice-signal", async data => {
-  if (!inCall || !data?.from || !data?.signal) return;
-  const pc = makePeer(data.from);
-  const signal = data.signal;
-
-  try {
-    if (signal.description) {
-      await pc.setRemoteDescription(signal.description);
-      if (signal.description.type === "offer") {
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        socket.emit("voice-signal", {
-          to: data.from,
-          signal: { description: pc.localDescription }
-        });
-      }
-    } else if (signal.candidate) {
-      await pc.addIceCandidate(signal.candidate);
+  const reader = new FileReader();
+  reader.onload = () => {
+    if (privateMode && activeDm) {
+      socket.emit("send-dm-message",{id:activeDm,type,content:reader.result});
+    } else if (!privateMode) {
+      socket.emit("send-room-message",{type,content:reader.result});
     }
-    $("callStatus").textContent = "Appel audio connecté 🎧";
-  } catch (error) {
-    console.error("Signal audio :", error);
-  }
-});
-
-socket.on("voice-peer-left", id => {
-  peers.get(id)?.close();
-  peers.delete(id);
-  document.getElementById("audio-" + id)?.remove();
-});
-
-$("muteBtn").addEventListener("click", () => {
-  if (!localStream) return;
-  muted = !muted;
-  localStream.getAudioTracks().forEach(track => track.enabled = !muted);
-  $("muteBtn").textContent = muted ? "Activer micro" : "Couper micro";
-});
-
-async function hangup() {
-  if (inCall) socket.emit("voice-leave");
-  inCall = false;
-  peers.forEach(pc => pc.close());
-  peers.clear();
-  localStream?.getTracks().forEach(track => track.stop());
-  localStream = null;
-  $("remoteAudio").replaceChildren();
-  $("callPanel").classList.add("hidden");
-  $("callStatus").textContent = "Appel terminé";
+  };
+  reader.readAsDataURL(file);
 }
 
-$("hangBtn").addEventListener("click", hangup);
+$("dmFile").onchange = e => {
+  sendFile(e.target.files[0],true);
+  e.target.value = "";
+};
+$("roomFile").onchange = e => {
+  sendFile(e.target.files[0],false);
+  e.target.value = "";
+};
 
-$("leaveBtn").addEventListener("click", async () => {
-  await hangup();
-  joined = false;
-  $("chat").classList.add("hidden");
-  $("login").classList.remove("hidden");
-  notify("Tu as quitté le salon.");
-});
-</script>
-</body>
-        </html>
+async function toggleVoice(privateMode) {
+  if (mediaRecorder && mediaRecorder.state === "recording") {
+    mediaRecorder.stop();
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    const recorder = new MediaRecorder(stream);
+    mediaRecorder = recorder;
+    const chunks = [];
+
+    recorder.ondataavailable = e => {
+      if (e.data.size) chunks.push(e.data);
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(chunks,{type:recorder.mimeType || "audio/webm"});
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        if (blob.size > 2800000) {
+          alert("Vocal trop lourd.");
+        } else if (privateMode && activeDm) {
+          socket.emit("send-dm-message",{id:activeDm,type:"audio",content:reader.result});
+        } else if (!privateMode) {
+          socket.emit("send-room-message",{type:"audio",content:reader.result});
+        }
+
+        stream.getTracks().forEach(track => track.stop()
+
 
