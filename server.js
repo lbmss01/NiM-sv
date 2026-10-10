@@ -15,17 +15,17 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 3000;
 const MAX_MEDIA_LENGTH = 750_000;
 const MAX_TEXT_LENGTH = 2000;
+const MAX_HISTORY = 30;
 
 app.use(express.static(path.join(__dirname, "public")));
 
-app.get("/health", (req, res) => {
-  res.json({ status: "ok", app: "NiM V4" });
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok", app: "NiM V6" });
 });
 
-// Messages gardés en mémoire : ils disparaissent si le serveur redémarre.
+// Stockage temporaire en mémoire.
+// Les messages peuvent disparaître au redémarrage du serveur.
 const histories = new Map();
-
-// Suivi des appels audio en cours.
 const voiceRooms = new Map();
 const voiceSocketRooms = new Map();
 const socketInfo = new Map();
@@ -42,8 +42,9 @@ function validRoom(room) {
 }
 
 function validDataUrl(data, type) {
-  if (typeof data !== "string") return false;
-  if (data.length > MAX_MEDIA_LENGTH) return false;
+  if (typeof data !== "string" || data.length > MAX_MEDIA_LENGTH) {
+    return false;
+  }
 
   if (type === "image") {
     return /^data:image\/(jpeg|jpg|png|webp);base64,/i.test(data);
@@ -56,6 +57,17 @@ function validDataUrl(data, type) {
   return false;
 }
 
+function addToHistory(room, message) {
+  const history = histories.get(room) || [];
+  history.push(message);
+
+  while (history.length > MAX_HISTORY) {
+    history.shift();
+  }
+
+  histories.set(room, history);
+}
+
 function systemMessage(room, text) {
   const msg = {
     id: `${Date.now()}-${Math.random()}`,
@@ -64,6 +76,7 @@ function systemMessage(room, text) {
     time: Date.now()
   };
 
+  addToHistory(room, msg);
   io.to(room).emit("new-message", msg);
 }
 
@@ -72,9 +85,12 @@ function leaveVoice(socket) {
   if (!room) return;
 
   const members = voiceRooms.get(room);
+
   if (members) {
     members.delete(socket.id);
-    if (members.size === 0) voiceRooms.delete(room);
+    if (members.size === 0) {
+      voiceRooms.delete(room);
+    }
   }
 
   voiceSocketRooms.delete(socket.id);
@@ -82,7 +98,7 @@ function leaveVoice(socket) {
   socket.to(`voice:${room}`).emit("voice-peer-left", socket.id);
 }
 
-io.on("connection", (socket) => {
+io.on("connection", socket => {
   socket.on("join-room", (payload = {}) => {
     const name = clean(payload.name, 24);
     const room = clean(payload.room, 40);
@@ -93,6 +109,7 @@ io.on("connection", (socket) => {
     }
 
     const oldInfo = socketInfo.get(socket.id);
+
     if (oldInfo && oldInfo.room === room && oldInfo.name === name) {
       socket.emit("joined", { name, room });
       socket.emit("history", histories.get(room) || []);
@@ -102,12 +119,18 @@ io.on("connection", (socket) => {
     if (oldInfo) {
       leaveVoice(socket);
       socket.leave(oldInfo.room);
+      socket.to(oldInfo.room).emit("member-left", {
+        name: oldInfo.name
+      });
     }
 
     socketInfo.set(socket.id, { name, room });
     socket.join(room);
 
-    if (!histories.has(room)) histories.set(room, []);
+    if (!histories.has(room)) {
+      histories.set(room, []);
+    }
+
     socket.emit("history", histories.get(room));
     socket.emit("joined", { name, room });
 
@@ -121,7 +144,10 @@ io.on("connection", (socket) => {
     let msg;
 
     if (payload.type === "text") {
-      const text = String(payload.text || "").trim().slice(0, MAX_TEXT_LENGTH);
+      const text = String(payload.text || "")
+        .trim()
+        .slice(0, MAX_TEXT_LENGTH);
+
       if (!text) return;
 
       msg = {
@@ -157,15 +183,11 @@ io.on("connection", (socket) => {
       return;
     }
 
-    const history = histories.get(info.room) || [];
-    history.push(msg);
-    while (history.length > 30) history.shift();
-    histories.set(info.room, history);
-
+    addToHistory(info.room, msg);
     io.to(info.room).emit("new-message", msg);
   });
 
-  // Rejoindre l'appel audio du salon.
+  // Appels audio
   socket.on("voice-join", () => {
     const info = socketInfo.get(socket.id);
     if (!info) return;
@@ -173,7 +195,10 @@ io.on("connection", (socket) => {
     leaveVoice(socket);
 
     const room = info.room;
-    if (!voiceRooms.has(room)) voiceRooms.set(room, new Set());
+
+    if (!voiceRooms.has(room)) {
+      voiceRooms.set(room, new Set());
+    }
 
     const members = voiceRooms.get(room);
     const peers = [...members];
@@ -186,13 +211,12 @@ io.on("connection", (socket) => {
     socket.to(`voice:${room}`).emit("voice-peer-joined", socket.id);
   });
 
-  // Relais des offres, réponses et candidats WebRTC.
+  // Relais des signaux WebRTC
   socket.on("voice-signal", (payload = {}) => {
     const room = voiceSocketRooms.get(socket.id);
-    if (!room || !payload.to) return;
 
-    const targetRoom = voiceSocketRooms.get(payload.to);
-    if (targetRoom !== room) return;
+    if (!room || !payload.to || !payload.signal) return;
+    if (voiceSocketRooms.get(payload.to) !== room) return;
 
     socket.to(payload.to).emit("voice-signal", {
       from: socket.id,
@@ -208,6 +232,7 @@ io.on("connection", (socket) => {
     leaveVoice(socket);
 
     const info = socketInfo.get(socket.id);
+
     if (info) {
       socket.to(info.room).emit("member-left", {
         name: info.name
@@ -219,7 +244,8 @@ io.on("connection", (socket) => {
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`NiM V4 démarré sur le port ${PORT}`);
+  console.log(`NiM V6 démarré sur le port ${PORT}`);
 });
-  
+
+
 
