@@ -1,8 +1,7 @@
-
 {
   "name": "nim-chat",
-  "version": "6.0.0",
-  "description": "NiM — Next is Me",
+  "version": "1.0.0",
+  "private": true,
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -12,4 +11,3 @@
     "socket.io": "^4.8.1"
   }
 }
-
