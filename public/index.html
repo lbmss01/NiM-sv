@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NiM Chat</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#090910;color:white;font-family:Arial,sans-serif}
+header{text-align:center;padding:22px;border-bottom:1px solid #30213e}
+h1{color:#c17aff;margin:0}
+header p{color:#aaa;font-size:13px}
+main{max-width:600px;margin:auto;padding:16px}
+.card{background:#171521;border:1px solid #342544;border-radius:16px;padding:16px;margin-bottom:15px}
+input,button{width:100%;padding:13px;margin-top:9px;border-radius:9px;font-size:15px}
+input{background:#0c0c14;color:white;border:1px solid #453453}
+button{background:linear-gradient(90deg,#8739e8,#df48ad);color:white;border:0;font-weight:bold}
+#chat{display:none}
+#messages{height:48vh;min-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin:15px 0}
+.message{background:#272236;padding:11px;border-radius:12px;overflow-wrap:anywhere}
+.message b{display:block;color:#d4a0ff;margin-bottom:5px}
+.system{text-align:center;color:#aaa;font-size:12px}
+.row{display:flex;gap:8px}
+.row input{flex:1;min-width:0}
+.row button{width:90px}
+#status{color:#c6a7e8;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+<h1>⚡ NiM Chat</h1>
+<p>Deux téléphones, un salon, des messages en direct.</p>
+</header>
+<main>
+<section class="card" id="login">
+<h2>Rejoindre un salon</h2>
+<input id="name" maxlength="20" placeholder="Ton pseudo">
+<input id="room" maxlength="24" placeholder="Code du salon (4 caractères minimum)">
+<button id="join">Rejoindre NiM Chat</button>
+<p id="status">Connexion au serveur en attente…</p>
+</section>
+<section class="card" id="chat">
+<h2 id="roomTitle">💬 Salon</h2>
+<div id="messages" aria-live="polite"></div>
+<form id="sendForm" class="row">
+<input id="text" maxlength="500" placeholder="Écris ton message…" autocomplete="off">
+<button type="submit">Envoyer</button>
+</form>
+<button id="leave">Quitter le salon</button>
+</section>
+</main>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket=io();
+const login=document.getElementById("login");
+const chat=document.getElementById("chat");
+const status=document.getElementById("status");
+const messages=document.getElementById("messages");
+let joined=false;
+
+socket.on("connect",()=>{
+status.textContent="Serveur connecté ✅";
+});
+
+socket.on("disconnect",()=>{
+joined=false;
+login.style.display="block";
+chat.style.display="none";
+status.textContent="Connexion perdue. Reconnecte-toi.";
+});
+
+document.getElementById("join").onclick=()=>{
+const name=document.getElementById("name").value.trim();
+const room=document.getElementById("room").value.trim().toLowerCase();
+
+if(!name||!/^[a-z0-9_-]{4,24}$/.test(room)){
+status.textContent="Entre un pseudo et un code de 4 à 24 lettres/chiffres.";
+return;
+}
+if(!socket.connected){
+status.textContent="Le serveur n'est pas connecté.";
+return;
+}
+socket.emit("join-room",{name,room});
+status.textContent="Connexion au salon…";
+};
+
+socket.on("joined",(name)=>{
+joined=true;
+login.style.display="none";
+chat.style.display="block";
+document.getElementById("roomTitle").textContent=
+"💬 Salon "+document.getElementById("room").value.trim();
+addMessage({type:"system",text:"Connecté sous le pseudo "+name});
+});
+
+socket.on("error-message",(text)=>{
+status.textContent=text;
+});
+
+socket.on("history",(history)=>{
+messages.replaceChildren();
+history.forEach(addMessage);
+});
+
+socket.on("chat-message",addMessage);
+
+function addMessage(message){
+const item=document.createElement("div");
+if(message.type==="system"){
+item.className="system";
+item.textContent=message.text;
+}else{
+item.className="message";
+const author=document.createElement("b");
+author.textContent=message.name;
+const content=document.createElement("div");
+content.textContent=message.text;
+item.append(author,content);
+}
+messages.appendChild(item);
+messages.scrollTop=messages.scrollHeight;
+}
+
+document.getElementById("sendForm").onsubmit=(event)=>{
+event.preventDefault();
+const input=document.getElementById("text");
+const text=input.value.trim();
+if(!joined||!text)return;
+socket.emit("send-message",text);
+input.value="";
+};
+
+document.getElementById("leave").onclick=()=>location.reload();
+</script>
+</body>
+</html>
