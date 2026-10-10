@@ -2,713 +2,538 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#100b1c">
-  <title>NiM Chat</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#100b1c">
+<title>NiM Chat</title>
 
-  <style>
-    :root {
-      --bg: #09070f;
-      --panel: #151020;
-      --panel2: #20162e;
-      --purple: #a855f7;
-      --pink: #ec4899;
-      --text: #f8f5ff;
-      --muted: #a69bb8;
-      --border: rgba(255,255,255,.09);
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      min-height: 100dvh;
-      background:
-        radial-gradient(ellipse at 15% 0%, #32134c 0%, transparent 42%),
-        radial-gradient(ellipse at 100% 100%, #25102f 0%, transparent 38%),
-        var(--bg);
-      color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    button, input { font: inherit; }
-    button { cursor: pointer; }
-
-    .screen {
-      width: 100%;
-      max-width: 720px;
-      min-height: 100dvh;
-      margin: auto;
-      display: flex;
-      flex-direction: column;
-    }
-
-    header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 18px 16px;
-      border-bottom: 1px solid var(--border);
-      background: rgba(13,9,21,.78);
-      backdrop-filter: blur(18px);
-      position: sticky;
-      top: 0;
-      z-index: 5;
-    }
-
-    .logo {
-      width: 46px;
-      height: 46px;
-      flex-shrink: 0;
-      border-radius: 16px;
-      display: grid;
-      place-items: center;
-      font-size: 23px;
-      font-weight: 900;
-      background: linear-gradient(135deg, var(--purple), var(--pink));
-      box-shadow: 0 5px 25px #a855f744;
-    }
-
-    .brand { font-weight: 850; font-size: 21px; letter-spacing: -.6px; }
-    .brand span {
-      background: linear-gradient(90deg, #c084fc, #fb7185);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-
-    .subtitle { color: var(--muted); font-size: 12px; margin-top: 2px; }
-    .online {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: #c4b5fd;
-      font-size: 12px;
-    }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #4ade80;
-      box-shadow: 0 0 12px #4ade8080;
-    }
-
-    #joinScreen {
-      margin: auto;
-      width: calc(100% - 32px);
-      max-width: 390px;
-      padding: 28px 22px;
-      border: 1px solid var(--border);
-      border-radius: 28px;
-      background: rgba(21,16,32,.88);
-      box-shadow: 0 20px 70px #0005;
-    }
-
-    .hero {
-      text-align: center;
-      font-size: 45px;
-      margin-bottom: 8px;
-    }
-
-    h1 { text-align: center; font-size: 27px; margin: 0 0 8px; }
-    .intro { text-align: center; color: var(--muted); font-size: 14px; margin: 0 0 24px; }
-
-    .field-label { display: block; font-size: 13px; margin: 15px 0 7px; color: #ded3ee; }
-
-    .field {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: #0e0a16;
-      color: white;
-      padding: 14px;
-      outline: none;
-    }
-
-    .field:focus { border-color: var(--purple); box-shadow: 0 0 0 3px #a855f722; }
-
-    .primary {
-      border: 0;
-      border-radius: 14px;
-      color: white;
-      background: linear-gradient(100deg, #9333ea, #db2777);
-      padding: 13px 17px;
-      font-weight: 750;
-      box-shadow: 0 7px 25px #a855f72c;
-    }
-
-    .primary:disabled { opacity: .45; cursor: not-allowed; }
-    #joinButton { width: 100%; margin-top: 22px; }
-
-    #chatScreen { display: none; flex: 1; min-height: 0; flex-direction: column; }
-
-    .room-info {
-      padding: 9px 16px;
-      color: var(--muted);
-      font-size: 12px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    #messages {
-      display: flex;
-      flex-direction: column;
-      gap: 13px;
-      padding: 18px 13px 24px;
-      flex: 1;
-      overflow-y: auto;
-      min-height: 200px;
-      overscroll-behavior: contain;
-    }
-
-    .system {
-      align-self: center;
-      color: #a99ab9;
-      font-size: 11px;
-      background: #ffffff08;
-      border: 1px solid var(--border);
-      padding: 6px 11px;
-      border-radius: 20px;
-      text-align: center;
-    }
-
-    .message {
-      max-width: 84%;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 5px;
-      align-self: flex-start;
-      min-width: 80px;
-    }
-
-    .message.mine { align-self: flex-end; align-items: flex-end; }
-
-    .sender {
-      font-size: 11px;
-      color: #d8b4fe;
-      padding: 0 8px;
-      overflow-wrap: anywhere;
-    }
-
-    .bubble {
-      background: linear-gradient(145deg, #241a33, #191322);
-      border: 1px solid var(--border);
-      border-radius: 18px 18px 18px 5px;
-      padding: 11px 13px;
-      overflow-wrap: anywhere;
-      white-space: pre-wrap;
-      line-height: 1.4;
-      box-shadow: 0 4px 15px #0002;
-    }
-
-    .mine .bubble {
-      background: linear-gradient(135deg, #8738d4, #bb287d);
-      border-color: #ffffff1c;
-      border-radius: 18px 18px 5px 18px;
-    }
-
-    .time { font-size: 10px; color: #9e91ad; padding: 0 7px; }
-
-    .chat-image {
-      display: block;
-      width: 100%;
-      max-width: 260px;
-      max-height: 320px;
-      object-fit: contain;
-      border-radius: 13px;
-      background: #0c0912;
-    }
-
-    .audio-bubble {
-      width: min(260px, 68vw);
-      padding: 11px;
-    }
-
-    .audio-title {
-      font-size: 12px;
-      margin-bottom: 8px;
-      color: #f2e7ff;
-    }
-
-    audio { display: block; width: 100%; height: 38px; }
-
-    .composer-wrap {
-      padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
-      border-top: 1px solid var(--border);
-      background: rgba(13,9,21,.94);
-      position: sticky;
-      bottom: 0;
-    }
-
-    .composer {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .icon-button {
-      width: 43px;
-      height: 43px;
-      flex-shrink: 0;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      color: #e9d5ff;
-      background: #21172e;
-      font-size: 20px;
-      display: grid;
-      place-items: center;
-    }
-
-    .icon-button:disabled { opacity: .4; cursor: not-allowed; }
-
-    #messageInput {
-      min-width: 0;
-      flex: 1;
-      padding: 12px 14px;
-      border-radius: 15px;
-      background: #1a1325;
-      border: 1px solid var(--border);
-      outline: none;
-      color: white;
-    }
-
-    #messageInput:focus { border-color: #a855f788; }
-    #sendButton { width: 45px; height: 43px; padding: 0; font-size: 19px; }
-
-    #voiceStatus {
-      display: none;
-      align-items: center;
-      gap: 8px;
-      padding: 0 5px 10px;
-      color: #f9a8d4;
-      font-size: 12px;
-    }
-
-    #voiceStatus.active { display: flex; }
-
-    .pulse {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #fb7185;
-      animation: pulse 1s infinite;
-    }
-
-    @keyframes pulse {
-      50% { opacity: .3; transform: scale(.75); }
-    }
-
-    #toast {
-      position: fixed;
-      left: 50%;
-      bottom: calc(92px + env(safe-area-inset-bottom));
-      transform: translateX(-50%);
-      width: max-content;
-      max-width: calc(100% - 32px);
-      padding: 11px 15px;
-      border-radius: 14px;
-      color: white;
-      background: #30203e;
-      border: 1px solid #ffffff22;
-      box-shadow: 0 8px 30px #0008;
-      font-size: 13px;
-      z-index: 20;
-      display: none;
-    }
-
-    .footer-note {
-      font-size: 11px;
-      color: #84778f;
-      text-align: center;
-      margin-top: 16px;
-    }
-
-    @media (min-width: 600px) {
-      body { padding: 16px; }
-      .screen {
-        min-height: calc(100dvh - 32px);
-        border: 1px solid var(--border);
-        border-radius: 24px;
-        overflow: hidden;
-        background: #0c0913a8;
-      }
-      header { position: relative; }
-      #messages { padding: 22px; }
-      .composer-wrap { position: relative; }
-    }
-  </style>
+<style>
+:root {
+  --bg:#0b0811;
+  --panel:#171020;
+  --purple:#a855f7;
+  --pink:#ec4899;
+  --text:#faf7ff;
+  --muted:#a99bb8;
+  --border:#ffffff14;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100dvh;color:var(--text);
+  font-family:system-ui,-apple-system,sans-serif;
+  background:radial-gradient(ellipse at 10% 0%,#35134d,transparent 42%),
+  radial-gradient(ellipse at 100% 100%,#30102f,transparent 40%),var(--bg)
+}
+button,input{font:inherit}
+button{cursor:pointer}
+.screen{max-width:720px;min-height:100dvh;margin:auto;display:flex;flex-direction:column}
+header{
+  display:flex;align-items:center;gap:12px;padding:17px 15px;
+  background:#100b1cdd;border-bottom:1px solid var(--border)
+}
+.logo{
+  width:45px;height:45px;border-radius:15px;display:grid;place-items:center;
+  font-size:24px;font-weight:900;background:linear-gradient(135deg,var(--purple),var(--pink))
+}
+.brand{font-size:22px;font-weight:900}
+.brand span{color:#d8a4ff}
+.subtitle{font-size:12px;color:var(--muted)}
+.status{margin-left:auto;font-size:11px;color:#86efac}
+#joinScreen{
+  width:calc(100% - 32px);max-width:390px;margin:auto;padding:25px 21px;
+  border:1px solid var(--border);border-radius:25px;background:#171020eF
+}
+.hero{text-align:center;font-size:43px}
+h1{text-align:center;margin:4px 0 8px}
+.intro{text-align:center;color:var(--muted);font-size:14px;margin-bottom:22px}
+label{display:block;font-size:13px;margin:15px 0 7px}
+.field{
+  width:100%;padding:14px;border-radius:13px;background:#0e0a15;
+  color:white;border:1px solid var(--border);outline:none
+}
+.field:focus{border-color:var(--purple)}
+.primary{
+  color:white;border:0;border-radius:13px;padding:13px 16px;font-weight:750;
+  background:linear-gradient(100deg,#9333ea,#db2777)
+}
+.primary:disabled{opacity:.55;cursor:wait}
+#joinButton{width:100%;margin-top:22px}
+.note{text-align:center;color:#8c7e99;font-size:11px;margin-top:16px}
+#chatScreen{display:none;flex:1;min-height:0;flex-direction:column}
+.room-info{padding:10px 15px;color:var(--muted);font-size:12px;border-bottom:1px solid var(--border)}
+#messages{flex:1;min-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:13px;padding:17px 12px 25px}
+.system{align-self:center;text-align:center;font-size:11px;color:var(--muted);background:#ffffff08;padding:6px 11px;border-radius:20px}
+.message{max-width:85%;align-self:flex-start;display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:70px}
+.message.mine{align-self:flex-end;align-items:flex-end}
+.sender{font-size:11px;color:#d8b4fe;padding:0 7px}
+.bubble{
+  padding:11px 13px;background:#21182e;border:1px solid var(--border);
+  border-radius:17px 17px 17px 5px;overflow-wrap:anywhere;white-space:pre-wrap;line-height:1.4
+}
+.mine .bubble{background:linear-gradient(135deg,#8738d4,#bb287d);border-radius:17px 17px 5px 17px}
+.time{font-size:10px;color:#a99bb8;padding:0 7px}
+.chat-image{display:block;width:100%;max-width:260px;max-height:320px;object-fit:contain;border-radius:12px}
+.audio-bubble{width:min(270px,70vw)}
+.audio-title{font-size:12px;margin-bottom:7px}
+audio{width:100%;height:38px;display:block}
+.composer-wrap{padding:11px 10px calc(11px + env(safe-area-inset-bottom));background:#100b1cf5;border-top:1px solid var(--border)}
+#voiceStatus{display:none;color:#f9a8d4;font-size:12px;padding:0 5px 10px}
+#voiceStatus.active{display:block}
+.composer{display:flex;align-items:center;gap:7px}
+.icon-button{
+  width:43px;height:43px;flex-shrink:0;border:1px solid var(--border);
+  border-radius:13px;background:#21172e;color:white;font-size:19px
+}
+.icon-button:disabled{opacity:.5}
+#messageInput{flex:1;min-width:0;background:#1a1325;color:white;border:1px solid var(--border);border-radius:14px;padding:12px;outline:none}
+#sendButton{width:44px;height:43px;padding:0;font-size:19px}
+#toast{
+  display:none;position:fixed;z-index:10;bottom:100px;left:50%;transform:translateX(-50%);
+  max-width:90%;padding:12px 15px;border-radius:13px;background:#352341;
+  border:1px solid #ffffff22;color:white;font-size:13px
+}
+@media(min-width:600px){
+ body{padding:16px}
+ .screen{min-height:calc(100dvh - 32px);border:1px solid var(--border);border-radius:24px;overflow:hidden;background:#0c0913aa}
+}
+</style>
 </head>
 
 <body>
-  <div class="screen">
-    <header>
-      <div class="logo">N</div>
-      <div>
-        <div class="brand">NiM <span>Chat</span></div>
-        <div class="subtitle">Next is Me · Ta conversation, ton univers</div>
-      </div>
-      <div class="online"><span class="dot"></span> En ligne</div>
-    </header>
+<div class="screen">
+  <header>
+    <div class="logo">N</div>
+    <div>
+      <div class="brand">NiM <span>Chat</span></div>
+      <div class="subtitle">Next is Me · Ton univers</div>
+    </div>
+    <div class="status" id="connectionStatus">● Prêt</div>
+  </header>
 
-    <section id="joinScreen">
-      <div class="hero">💬</div>
-      <h1>Rejoins NiM</h1>
-      <p class="intro">Entre dans un salon et parle avec tes amis.</p>
+  <section id="joinScreen">
+    <div class="hero">💬</div>
+    <h1>Rejoins NiM</h1>
+    <p class="intro">Retrouve tes amis dans un salon.</p>
+    <form id="joinForm">
+      <label for="nameInput">Ton pseudo</label>
+      <input class="field" id="nameInput" maxlength="24" placeholder="Ex. Lolo" autocomplete="nickname" required>
+      <label for="roomInput">Nom du salon</label>
+      <input class="field" id="roomInput" maxlength="32" placeholder="Ex. amis123" required>
+      <button class="primary" id="joinButton" type="submit">Entrer dans le chat →</button>
+    </form>
+    <div class="note">Pas de compte nécessaire pour le moment.</div>
+  </section>
 
-      <form id="joinForm">
-        <label class="field-label" for="nameInput">Ton pseudo</label>
-        <input class="field" id="nameInput" maxlength="24"
-               placeholder="Ex. Lolo" autocomplete="nickname" required>
-
-        <label class="field-label" for="roomInput">Nom du salon</label>
-        <input class="field" id="roomInput" maxlength="32"
-               placeholder="Ex. amis123" required>
-
-        <button class="primary" id="joinButton" type="submit">Entrer dans le chat →</button>
+  <section id="chatScreen">
+    <div class="room-info">Salon : <strong id="roomName"></strong></div>
+    <main id="messages" aria-live="polite"></main>
+    <div class="composer-wrap">
+      <div id="voiceStatus">🔴 Enregistrement : <span id="voiceTimer">0:00 / 0:20</span> — appuie sur ■ pour envoyer</div>
+      <form class="composer" id="messageForm">
+        <button class="icon-button" id="imageButton" type="button" title="Envoyer une photo">＋</button>
+        <input id="imageInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+        <input id="messageInput" maxlength="500" placeholder="Écris un message..." autocomplete="off">
+        <button class="icon-button" id="micButton" type="button" title="Message vocal">🎙️</button>
+        <button class="primary" id="sendButton" type="submit">➤</button>
       </form>
-      <div class="footer-note">Pas de compte nécessaire pour le moment.</div>
-    </section>
+    </div>
+  </section>
+</div>
+<div id="toast" role="status"></div>
 
-    <section id="chatScreen">
-      <div class="room-info">Salon : <strong id="roomName"></strong></div>
-      <main id="messages" aria-live="polite"></main>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
 
-      <div class="composer-wrap">
-        <div id="voiceStatus">
-          <span class="pulse"></span>
-          <span id="voiceTimer">Enregistrement : 0:00 / 0:20</span>
-          <span>· Appuie sur ■ pour envoyer</span>
-        </div>
+  const socket = io({ autoConnect: false });
 
-        <form class="composer" id="messageForm">
-          <button class="icon-button" id="imageButton" type="button" title="Envoyer une photo" aria-label="Envoyer une photo">＋</button>
-          <input id="imageInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
-          <input id="messageInput" maxlength="500" placeholder="Écris un message..." autocomplete="off">
-          <button class="icon-button" id="micButton" type="button" title="Enregistrer un vocal" aria-label="Enregistrer un vocal">🎙️</button>
-          <button class="primary" id="sendButton" type="submit" aria-label="Envoyer">➤</button>
-        </form>
-      </div>
-    </section>
-  </div>
+  let myName = "";
+  let myRoom = "";
+  let joined = false;
+  let joinRequested = false;
+  let joinTimeout = null;
+  let recorder = null;
+  let stream = null;
+  let chunks = [];
+  let recordStart = 0;
+  let recordInterval = null;
+  let recordTimeout = null;
+  let stopping = false;
+  let toastTimeout = null;
 
-  <div id="toast" role="status"></div>
+  function toast(text) {
+    $("toast").textContent = text;
+    $("toast").style.display = "block";
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => $("toast").style.display = "none", 3500);
+  }
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
+  function setStatus(text) {
+    $("connectionStatus").textContent = text;
+  }
 
-    const joinScreen = document.getElementById("joinScreen");
-    const chatScreen = document.getElementById("chatScreen");
-    const joinForm = document.getElementById("joinForm");
-    const nameInput = document.getElementById("nameInput");
-    const roomInput = document.getElementById("roomInput");
-    const joinButton = document.getElementById("joinButton");
-    const roomName = document.getElementById("roomName");
-    const messages = document.getElementById("messages");
-    const messageForm = document.getElementById("messageForm");
-    const messageInput = document.getElementById("messageInput");
-    const sendButton = document.getElementById("sendButton");
-    const imageButton = document.getElementById("imageButton");
-    const imageInput = document.getElementById("imageInput");
-    const micButton = document.getElementById("micButton");
-    const voiceStatus = document.getElementById("voiceStatus");
-    const voiceTimer = document.getElementById("voiceTimer");
-    const toast = document.getElementById("toast");
+  function updateJoinButton(text, disabled) {
+    $("joinButton").textContent = text;
+    $("joinButton").disabled = disabled;
+  }
 
-    let myName = "";
-    let myRoom = "";
-    let joined = false;
-    let recorder = null;
-    let mediaStream = null;
-    let audioChunks = [];
-    let recordStartedAt = 0;
-    let recordInterval = null;
-    let recordTimeout = null;
-    let stoppingRecording = false;
-    let toastTimeout = null;
+  function sendJoinRequest() {
+    if (!socket.connected || !joinRequested || !myName || !myRoom) return;
+    setStatus("● Connexion...");
+    socket.emit("join-room", { name: myName, room: myRoom });
+  }
 
-    function showToast(message) {
-      toast.textContent = message;
-      toast.style.display = "block";
-      clearTimeout(toastTimeout);
-      toastTimeout = setTimeout(() => {
-        toast.style.display = "none";
-      }, 3500);
+  $("joinForm").addEventListener("submit", event => {
+    event.preventDefault();
+
+    myName = $("nameInput").value.trim().slice(0, 24);
+    myRoom = $("roomInput").value.trim().slice(0, 32);
+
+    if (!myName || !myRoom) {
+      toast("Entre un pseudo et un nom de salon.");
+      return;
     }
 
-    function formatTime(value) {
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) return "";
-      return date.toLocaleTimeString("fr-FR", {
-        hour: "2-digit",
-        minute: "2-digit"
+    joined = false;
+    joinRequested = true;
+    updateJoinButton("Connexion...", true);
+
+    clearTimeout(joinTimeout);
+    joinTimeout = setTimeout(() => {
+      if (!joined) {
+        updateJoinButton("Réessayer →", false);
+        setStatus("● À vérifier");
+        toast("La connexion prend trop de temps. Réessaie.");
+      }
+    }, 10000);
+
+    if (socket.connected) {
+      sendJoinRequest();
+    } else {
+      socket.connect();
+    }
+  });
+
+  socket.on("connect", () => {
+    setStatus("● Connecté");
+    if (joinRequested) sendJoinRequest();
+  });
+
+  socket.on("connect_error", () => {
+    setStatus("● Hors ligne");
+    updateJoinButton("Réessayer →", false);
+    toast("Connexion au serveur impossible. Réessaie.");
+  });
+
+  socket.on("disconnect", () => {
+    setStatus("● Reconnexion...");
+    if (joined) toast("Connexion perdue, tentative de reconnexion...");
+  });
+
+  socket.on("joined", data => {
+    clearTimeout(joinTimeout);
+    joined = true;
+    joinRequested = true;
+    myName = data.name || myName;
+    myRoom = data.room || myRoom;
+
+    $("roomName").textContent = myRoom;
+    $("joinScreen").style.display = "none";
+    $("chatScreen").style.display = "flex";
+    updateJoinButton("Entrer dans le chat →", false);
+    setStatus("● Connecté");
+    $("messageInput").focus();
+    scrollBottom();
+  });
+
+  socket.on("history", history => {
+    $("messages").replaceChildren();
+    if (Array.isArray(history)) history.forEach(renderMessage);
+  });
+
+  socket.on("chat-message", renderMessage);
+
+  socket.on("error-message", message => {
+    toast(message || "Une erreur est survenue.");
+    if (!joined) updateJoinButton("Réessayer →", false);
+  });
+
+  function scrollBottom() {
+    requestAnimationFrame(() => {
+      $("messages").scrollTop = $("messages").scrollHeight;
+    });
+  }
+
+  function renderMessage(msg) {
+    if (!msg || typeof msg !== "object") return;
+
+    if (msg.type === "system") {
+      const el = document.createElement("div");
+      el.className = "system";
+      el.textContent = msg.text || "";
+      $("messages").appendChild(el);
+      scrollBottom();
+      return;
+    }
+
+    const wrapper = document.createElement("article");
+    wrapper.className = "message" + (msg.name === myName ? " mine" : "");
+
+    if (msg.name !== myName) {
+      const sender = document.createElement("div");
+      sender.className = "sender";
+      sender.textContent = msg.name || "Membre";
+      wrapper.appendChild(sender);
+    }
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+
+    if (msg.type === "text") {
+      bubble.textContent = msg.text || "";
+    } else if (msg.type === "image") {
+      const img = document.createElement("img");
+      img.className = "chat-image";
+      img.alt = "Photo envoyée";
+      img.loading = "lazy";
+      img.src = msg.image;
+      bubble.appendChild(img);
+    } else if (msg.type === "audio") {
+      bubble.classList.add("audio-bubble");
+
+      const title = document.createElement("div");
+      title.className = "audio-title";
+      title.textContent = "🎙️ Message vocal";
+
+      const player = document.createElement("audio");
+      player.controls = true;
+      player.preload = "metadata";
+      player.src = msg.audio;
+
+      bubble.append(title, player);
+    } else {
+      return;
+    }
+
+    wrapper.appendChild(bubble);
+
+    const time = document.createElement("div");
+    time.className = "time";
+    const date = new Date(msg.time);
+    time.textContent = Number.isNaN(date.getTime()) ? "" :
+      date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
+    wrapper.appendChild(time);
+    $("messages").appendChild(wrapper);
+    scrollBottom();
+  }
+
+  $("messageForm").addEventListener("submit", event => {
+    event.preventDefault();
+    const text = $("messageInput").value.trim();
+
+    if (!joined || !socket.connected) {
+      toast("Attends la connexion au salon.");
+      return;
+    }
+    if (!text) return;
+
+    socket.emit("send-message", { type: "text", text });
+    $("messageInput").value = "";
+    $("messageInput").focus();
+  });
+
+  $("imageButton").addEventListener("click", () => {
+    if (joined) $("imageInput").click();
+    else toast("Entre d'abord dans un salon.");
+  });
+
+  $("imageInput").addEventListener("change", async () => {
+    const file = $("imageInput").files[0];
+    $("imageInput").value = "";
+    if (!file || !joined) return;
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast("Choisis une photo JPG, PNG ou WebP.");
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      toast("Photo trop lourde. Choisis-en une plus petite.");
+      return;
+    }
+
+    $("imageButton").disabled = true;
+
+    try {
+      const url = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
       });
-    }
 
-    function updateRecordTimer() {
-      const seconds = Math.min(20, Math.floor((Date.now() - recordStartedAt) / 1000));
-      voiceTimer.textContent =
-        `Enregistrement : 0:${String(seconds).padStart(2, "0")} / 0:20`;
-    }
-
-    function scrollToBottom() {
-      requestAnimationFrame(() => {
-        messages.scrollTop = messages.scrollHeight;
+      const img = new Image();
+      img.src = url;
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
       });
-    }
 
-    function renderMessage(message) {
-      if (!message || typeof message !== "object") return;
+      const scale = Math.min(1, 900 / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      if (message.type === "system") {
-        const system = document.createElement("div");
-        system.className = "system";
-        system.textContent = message.text || "";
-        messages.appendChild(system);
-        scrollToBottom();
+      const compressed = canvas.toDataURL("image/jpeg", 0.68);
+      if (compressed.length > 750000) {
+        toast("Photo trop lourde. Essaie une autre image.");
         return;
       }
 
-      const mine = message.name === myName;
-      const wrapper = document.createElement("article");
-      wrapper.className = "message" + (mine ? " mine" : "");
+      socket.emit("send-message", { type: "image", image: compressed });
+    } catch {
+      toast("Impossible de préparer cette photo.");
+    } finally {
+      $("imageButton").disabled = false;
+    }
+  });
 
-      if (!mine) {
-        const sender = document.createElement("div");
-        sender.className = "sender";
-        sender.textContent = message.name || "Membre";
-        wrapper.appendChild(sender);
-      }
+  function stopMicrophone() {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
+    }
+  }
 
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
+  function resetRecorderUI() {
+    clearInterval(recordInterval);
+    clearTimeout(recordTimeout);
+    recordInterval = null;
+    recordTimeout = null;
+    $("voiceStatus").classList.remove("active");
+    $("micButton").textContent = "🎙️";
+    $("micButton").disabled = false;
+    stopping = false;
+  }
 
-      if (message.type === "text") {
-        bubble.textContent = message.text || "";
-      } else if (message.type === "image") {
-        const image = document.createElement("img");
-        image.className = "chat-image";
-        image.alt = "Photo envoyée dans le chat";
-        image.loading = "lazy";
-        image.src = message.image;
-        image.addEventListener("error", () => {
-          image.alt = "Impossible de charger cette photo";
-        });
-        bubble.appendChild(image);
-      } else if (message.type === "audio") {
-        bubble.classList.add("audio-bubble");
+  async function startRecording() {
+    if (!joined || recorder) return;
 
-        const title = document.createElement("div");
-        title.className = "audio-title";
-        title.textContent = "🎙️ Message vocal";
-
-        const player = document.createElement("audio");
-        player.controls = true;
-        player.preload = "metadata";
-        player.src = message.audio;
-
-        bubble.append(title, player);
-      } else {
-        return;
-      }
-
-      wrapper.appendChild(bubble);
-
-      const time = document.createElement("div");
-      time.className = "time";
-      time.textContent = formatTime(message.time);
-      wrapper.appendChild(time);
-
-      messages.appendChild(wrapper);
-      scrollToBottom();
+    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+      toast("Ton navigateur ne permet pas l'enregistrement vocal.");
+      return;
     }
 
-    function clearRecordingUI() {
-      clearInterval(recordInterval);
-      clearTimeout(recordTimeout);
-      recordInterval = null;
-      recordTimeout = null;
-      voiceStatus.classList.remove("active");
-      micButton.textContent = "🎙️";
-      micButton.title = "Enregistrer un vocal";
-      micButton.setAttribute("aria-label", "Enregistrer un vocal");
-      micButton.disabled = !joined;
-      stoppingRecording = false;
-    }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    function releaseMicrophone() {
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(track => track.stop());
-        mediaStream = null;
-      }
-    }
+      const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+      let options = {};
+      const supported = types.find(type => MediaRecorder.isTypeSupported(type));
+      if (supported) options.mimeType = supported;
 
-    async function startRecording() {
-      if (!joined || recorder) return;
+      recorder = new MediaRecorder(stream, options);
+      chunks = [];
+      stopping = false;
 
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia ||
-          typeof MediaRecorder === "undefined") {
-        showToast("Les vocaux ne sont pas compatibles avec ce navigateur.");
-        return;
-      }
+      recorder.addEventListener("dataavailable", event => {
+        if (event.data && event.data.size) chunks.push(event.data);
+      });
 
-      try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recorder.addEventListener("stop", async () => {
+        const mime = recorder?.mimeType || chunks[0]?.type || "audio/webm";
+        const blob = new Blob(chunks, { type: mime });
 
-        const preferredTypes = [
-          "audio/webm;codecs=opus",
-          "audio/webm",
-          "audio/mp4"
-        ];
+        recorder = null;
+        chunks = [];
+        stopMicrophone();
+        resetRecorderUI();
 
-        let options;
-        for (const mimeType of preferredTypes) {
-          if (MediaRecorder.isTypeSupported(mimeType)) {
-            options = { mimeType };
-            break;
-          }
+        if (!blob.size) {
+          toast("Aucun son enregistré. Réessaie.");
+          return;
+        }
+        if (blob.size > 540000) {
+          toast("Vocal trop lourd. Essaie un enregistrement plus court.");
+          return;
         }
 
-        recorder = options
-          ? new MediaRecorder(mediaStream, options)
-          : new MediaRecorder(mediaStream);
-
-        audioChunks = [];
-        stoppingRecording = false;
-
-        recorder.addEventListener("dataavailable", event => {
-          if (event.data && event.data.size > 0) {
-            audioChunks.push(event.data);
-          }
-        });
-
-        recorder.addEventListener("stop", async () => {
-          const recordedBlob = new Blob(audioChunks, {
-            type: recorder && recorder.mimeType
-              ? recorder.mimeType
-              : (audioChunks[0] && audioChunks[0].type) || "audio/webm"
+        try {
+          const data = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
           });
 
-          recorder = null;
-          audioChunks = [];
-          releaseMicrophone();
-          clearRecordingUI();
-
-          if (recordedBlob.size === 0) {
-            showToast("Aucun son enregistré. Réessaie.");
+          if (typeof data !== "string" || data.length > 750000) {
+            toast("Vocal trop lourd. Réessaie plus court.");
             return;
           }
-
-          if (recordedBlob.size > 540000) {
-            showToast("Le vocal est trop lourd. Fais un enregistrement plus court.");
-            return;
+          if (joined && socket.connected) {
+            socket.emit("send-message", { type: "audio", audio: data });
+          } else {
+            toast("Tu n'es plus connecté au salon.");
           }
-
-          try {
-            const dataUrl = await new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result);
-              reader.onerror = () => reject(new Error("Lecture audio impossible"));
-              reader.readAsDataURL(recordedBlob);
-            });
-
-            if (typeof dataUrl !== "string" || dataUrl.length > 750000) {
-              showToast("Le vocal est trop volumineux. Réessaie plus court.");
-              return;
-            }
-
-            socket.emit("send-message", {
-              type: "audio",
-              audio: dataUrl
-            });
-          } catch (error) {
-            showToast("Impossible de préparer le vocal.");
-          }
-        });
-
-        recorder.addEventListener("error", () => {
-          showToast("Erreur pendant l'enregistrement du vocal.");
-          releaseMicrophone();
-          recorder = null;
-          clearRecordingUI();
-        });
-
-        recorder.start();
-        recordStartedAt = Date.now();
-        voiceStatus.classList.add("active");
-        micButton.textContent = "■";
-        micButton.title = "Arrêter et envoyer le vocal";
-        micButton.setAttribute("aria-label", "Arrêter et envoyer le vocal");
-        updateRecordTimer();
-
-        recordInterval = setInterval(updateRecordTimer, 250);
-        recordTimeout = setTimeout(() => stopRecording(), 20000);
-        showToast("Enregistrement lancé ! Appuie sur ■ pour envoyer.");
-      } catch (error) {
-        releaseMicrophone();
-        recorder = null;
-        clearRecordingUI();
-        showToast("Micro refusé ou indisponible. Autorise l'accès au micro.");
-      }
-    }
-
-    function stopRecording() {
-      if (!recorder || recorder.state === "inactive" || stoppingRecording) return;
-
-      stoppingRecording = true;
-      micButton.disabled = true;
-      clearTimeout(recordTimeout);
-
-      try {
-        recorder.stop();
-      } catch (error) {
-        releaseMicrophone();
-        recorder = null;
-        clearRecordingUI();
-        showToast("Impossible d'arrêter l'enregistrement.");
-      }
-    }
-
-    joinForm.addEventListener("submit", event => {
-      event.preventDefault();
-
-      myName = nameInput.value.trim().slice(0, 24);
-      myRoom = roomInput.value.trim().slice(0, 32);
-
-      if (!myName || !myRoom) {
-        showToast("Entre un pseudo et un nom de salon.");
-        return;
-      }
-
-      joinButton.disabled = true;
-      joinButton.textContent = "Connexion...";
-
-      if (!socket.connected) {
-        socket.connect();
-      }
-
-      socket.emit("join-room", {
-        name: myName,
-        room: myRoom
+        } catch {
+          toast("Impossible de préparer le vocal.");
+        }
       });
-    });
 
-    socket.on("history", history => {
-      messages.replaceChildren();
-      if (Array.isArray(history)) {
-        history.forEach(renderMessage);
-      }
-    });
+      recorder.addEventListener("error", () => {
+        recorder = null;
+        stopMicrophone();
+        resetRecorderUI();
+        toast("Erreur pendant l'enregistrement.");
+      });
 
-    socket.on("joined", data => {
-      joined = true;
-      myName = data.name || myName;
-      myRoom = data.room || myRoom;
-      roomName.textContent = myRoom;
+      recorder.start();
+      recordStart = Date.now();
+      $("voiceStatus").classList.add("active");
+      $("micButton").textContent = "■";
+      $("micButton").disabled = false;
 
-      joinScreen.style.display = "none";
-      chatScreen.style.display = "flex";
-   
+      const updateTimer = () => {
+        const seconds = Math.min(20, Math.floor((Date.now() - recordStart) / 1000));
+        $("voiceTimer").textContent = `0:${String(seconds).padStart(2, "0")} / 0:20`;
+      };
+
+      updateTimer();
+      recordInterval = setInterval(updateTimer, 250);
+      recordTimeout = setTimeout(stopRecording, 20000);
+    } catch {
+      stopMicrophone();
+      recorder = null;
+      resetRecorderUI();
+      toast("Autorise l'accès au microphone puis réessaie.");
+    }
+  }
+
+  function stopRecording() {
+    if (!recorder || recorder.state === "inactive" || stopping) return;
+    stopping = true;
+    $("micButton").disabled = true;
+    clearTimeout(recordTimeout);
+    try {
+      recorder.stop();
+    } catch {
+      recorder = null;
+      stopMicrophone();
+      resetRecorderUI();
+      toast("Impossible d'arrêter l'enregistrement.");
+    }
+  }
+
+  $("micButton").addEventListener("click", () => {
+    if (recorder) stopRecording();
+    else startRecording();
+  });
+
+  window.addEventListener("beforeunload", stopMicrophone);
+})();
+</script>
+</body>
+  </html>
+  
