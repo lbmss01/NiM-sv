@@ -4,536 +4,546 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#100b1c">
-<title>NiM Chat</title>
-
+<meta name="theme-color" content="#10091d">
+<title>NiM — Next is Me</title>
 <style>
 :root {
-  --bg:#0b0811;
-  --panel:#171020;
-  --purple:#a855f7;
-  --pink:#ec4899;
-  --text:#faf7ff;
-  --muted:#a99bb8;
-  --border:#ffffff14;
+  --bg:#0b0712; --panel:#171022; --panel2:#21152f;
+  --pink:#ff4fbd; --purple:#9b5cff; --text:#f8f2ff;
+  --muted:#b5a8c7; --line:#ffffff16;
 }
-*{box-sizing:border-box}
-body{
-  margin:0;min-height:100dvh;color:var(--text);
-  font-family:system-ui,-apple-system,sans-serif;
-  background:radial-gradient(ellipse at 10% 0%,#35134d,transparent 42%),
-  radial-gradient(ellipse at 100% 100%,#30102f,transparent 40%),var(--bg)
+* { box-sizing:border-box; }
+body {
+  margin:0; min-height:100vh; color:var(--text);
+  background:radial-gradient(ellipse at top,#28123f 0%,#10091b 45%,#09060e 100%);
+  font-family:system-ui,-apple-system,Segoe UI,sans-serif;
 }
-button,input{font:inherit}
-button{cursor:pointer}
-.screen{max-width:720px;min-height:100dvh;margin:auto;display:flex;flex-direction:column}
-header{
-  display:flex;align-items:center;gap:12px;padding:17px 15px;
-  background:#100b1cdd;border-bottom:1px solid var(--border)
-}
-.logo{
-  width:45px;height:45px;border-radius:15px;display:grid;place-items:center;
-  font-size:24px;font-weight:900;background:linear-gradient(135deg,var(--purple),var(--pink))
-}
-.brand{font-size:22px;font-weight:900}
-.brand span{color:#d8a4ff}
-.subtitle{font-size:12px;color:var(--muted)}
-.status{margin-left:auto;font-size:11px;color:#86efac}
-#joinScreen{
-  width:calc(100% - 32px);max-width:390px;margin:auto;padding:25px 21px;
-  border:1px solid var(--border);border-radius:25px;background:#171020eF
-}
-.hero{text-align:center;font-size:43px}
-h1{text-align:center;margin:4px 0 8px}
-.intro{text-align:center;color:var(--muted);font-size:14px;margin-bottom:22px}
-label{display:block;font-size:13px;margin:15px 0 7px}
-.field{
-  width:100%;padding:14px;border-radius:13px;background:#0e0a15;
-  color:white;border:1px solid var(--border);outline:none
-}
-.field:focus{border-color:var(--purple)}
-.primary{
-  color:white;border:0;border-radius:13px;padding:13px 16px;font-weight:750;
-  background:linear-gradient(100deg,#9333ea,#db2777)
-}
-.primary:disabled{opacity:.55;cursor:wait}
-#joinButton{width:100%;margin-top:22px}
-.note{text-align:center;color:#8c7e99;font-size:11px;margin-top:16px}
-#chatScreen{display:none;flex:1;min-height:0;flex-direction:column}
-.room-info{padding:10px 15px;color:var(--muted);font-size:12px;border-bottom:1px solid var(--border)}
-#messages{flex:1;min-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:13px;padding:17px 12px 25px}
-.system{align-self:center;text-align:center;font-size:11px;color:var(--muted);background:#ffffff08;padding:6px 11px;border-radius:20px}
-.message{max-width:85%;align-self:flex-start;display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:70px}
-.message.mine{align-self:flex-end;align-items:flex-end}
-.sender{font-size:11px;color:#d8b4fe;padding:0 7px}
-.bubble{
-  padding:11px 13px;background:#21182e;border:1px solid var(--border);
-  border-radius:17px 17px 17px 5px;overflow-wrap:anywhere;white-space:pre-wrap;line-height:1.4
-}
-.mine .bubble{background:linear-gradient(135deg,#8738d4,#bb287d);border-radius:17px 17px 5px 17px}
-.time{font-size:10px;color:#a99bb8;padding:0 7px}
-.chat-image{display:block;width:100%;max-width:260px;max-height:320px;object-fit:contain;border-radius:12px}
-.audio-bubble{width:min(270px,70vw)}
-.audio-title{font-size:12px;margin-bottom:7px}
-audio{width:100%;height:38px;display:block}
-.composer-wrap{padding:11px 10px calc(11px + env(safe-area-inset-bottom));background:#100b1cf5;border-top:1px solid var(--border)}
-#voiceStatus{display:none;color:#f9a8d4;font-size:12px;padding:0 5px 10px}
-#voiceStatus.active{display:block}
-.composer{display:flex;align-items:center;gap:7px}
-.icon-button{
-  width:43px;height:43px;flex-shrink:0;border:1px solid var(--border);
-  border-radius:13px;background:#21172e;color:white;font-size:19px
-}
-.icon-button:disabled{opacity:.5}
-#messageInput{flex:1;min-width:0;background:#1a1325;color:white;border:1px solid var(--border);border-radius:14px;padding:12px;outline:none}
-#sendButton{width:44px;height:43px;padding:0;font-size:19px}
-#toast{
-  display:none;position:fixed;z-index:10;bottom:100px;left:50%;transform:translateX(-50%);
-  max-width:90%;padding:12px 15px;border-radius:13px;background:#352341;
-  border:1px solid #ffffff22;color:white;font-size:13px
-}
-@media(min-width:600px){
- body{padding:16px}
- .screen{min-height:calc(100dvh - 32px);border:1px solid var(--border);border-radius:24px;overflow:hidden;background:#0c0913aa}
+button,input { font:inherit; }
+button { cursor:pointer; }
+button:disabled { opacity:.45; cursor:not-allowed; }
+.hidden { display:none!important; }
+.app { width:100%; max-width:850px; min-height:100dvh; margin:auto; padding:18px; display:flex; flex-direction:column; }
+.brand { font-size:38px; font-weight:900; letter-spacing:-2px; background:linear-gradient(90deg,#fff,var(--pink),var(--purple)); color:transparent; background-clip:text; }
+.subtitle { color:var(--muted); margin-top:-5px; }
+.panel { background:#160f22d9; border:1px solid var(--line); border-radius:24px; box-shadow:0 15px 60px #0004; backdrop-filter:blur(15px); }
+#home { margin:auto 0; padding:25px; }
+h1,h2,p { margin-top:0; }
+.field { display:block; margin:15px 0; color:var(--muted); font-size:14px; }
+.field input { display:block; width:100%; margin-top:7px; padding:14px; color:white; background:#0c0813; border:1px solid #ffffff20; border-radius:14px; outline:none; }
+.field input:focus { border-color:var(--purple); }
+.primary { border:0; border-radius:14px; padding:13px 17px; color:white; font-weight:750; background:linear-gradient(100deg,var(--purple),var(--pink)); }
+.full { width:100%; margin-top:8px; }
+.note { color:var(--muted); font-size:12px; margin:15px 0 0; }
+#chat { flex:1; min-height:0; display:flex; flex-direction:column; }
+.topbar { display:flex; align-items:center; gap:12px; padding:13px; margin-bottom:12px; }
+.room-title { flex:1; min-width:0; }
+.room-title strong { display:block; overflow-wrap:anywhere; }
+.room-title small { color:var(--muted); }
+.round { border:1px solid #ffffff1c; color:white; background:var(--panel2); border-radius:13px; min-width:43px; height:43px; padding:0 11px; }
+#callButton { background:linear-gradient(135deg,#7d45e8,#d83baf); border:0; }
+#messages { flex:1; min-height:220px; overflow-y:auto; padding:16px 12px; display:flex; flex-direction:column; gap:11px; }
+.message { max-width:88%; align-self:flex-start; overflow-wrap:anywhere; background:#21172f; border:1px solid #ffffff0c; padding:11px 13px; border-radius:17px 17px 17px 5px; }
+.message.mine { align-self:flex-end; background:linear-gradient(135deg,#5632a0,#7d286e); border-radius:17px 17px 5px 17px; }
+.message .meta { color:#d5c5e8; font-size:11px; margin-bottom:5px; }
+.message .body { white-space:pre-wrap; }
+.message img { display:block; max-width:100%; width:auto; max-height:360px; object-fit:contain; border-radius:12px; }
+.message audio { display:block; max-width:100%; width:260px; height:42px; }
+.system { align-self:center; max-width:100%; text-align:center; color:var(--muted); font-size:12px; padding:4px 10px; }
+.composer { padding:11px; display:flex; gap:8px; align-items:center; margin-top:12px; margin-bottom:env(safe-area-inset-bottom); }
+#messageInput { flex:1; min-width:0; padding:13px; color:white; background:#0c0813; border:1px solid #ffffff1a; border-radius:15px; outline:none; }
+#sendButton { width:46px; height:46px; flex-shrink:0; }
+.composer .round { flex-shrink:0; }
+#recordStatus { font-size:12px; color:var(--pink); text-align:center; padding:4px; }
+#callPanel { padding:18px; margin-bottom:12px; text-align:center; }
+#callPanel p { color:var(--muted); margin-bottom:12px; }
+.call-actions { display:flex; justify-content:center; gap:10px; }
+#callStatus { color:#f7d9ff; font-size:14px; margin:10px 0; }
+#toast { position:fixed; left:50%; bottom:25px; transform:translateX(-50%); background:#291b3b; border:1px solid #ffffff22; padding:12px 17px; border-radius:14px; max-width:90%; z-index:5; text-align:center; }
+@media(max-width:520px) {
+ .app { padding:11px; }
+ #home { padding:20px; }
+ .brand { font-size:34px; }
+ .topbar { padding:9px; gap:7px; }
+ .round { min-width:40px; height:40px; padding:0 9px; }
+ #messages { padding:12px 3px; }
+ .message { max-width:92%; }
+ .composer { gap:6px; padding:8px 4px; }
+ .message audio { width:235px; }
 }
 </style>
 </head>
-
 <body>
-<div class="screen">
+<div class="app">
   <header>
-    <div class="logo">N</div>
-    <div>
-      <div class="brand">NiM <span>Chat</span></div>
-      <div class="subtitle">Next is Me · Ton univers</div>
-    </div>
-    <div class="status" id="connectionStatus">● Prêt</div>
+    <div class="brand">NiM<span style="color:white">.</span></div>
+    <div class="subtitle">Next is Me · parle, partage, connecte-toi.</div>
   </header>
 
-  <section id="joinScreen">
-    <div class="hero">💬</div>
-    <h1>Rejoins NiM</h1>
-    <p class="intro">Retrouve tes amis dans un salon.</p>
+  <section id="home" class="panel">
+    <h1>Entre dans NiM ✨</h1>
+    <p style="color:var(--muted)">Rejoins tes potes dans un salon.</p>
     <form id="joinForm">
-      <label for="nameInput">Ton pseudo</label>
-      <input class="field" id="nameInput" maxlength="24" placeholder="Ex. Lolo" autocomplete="nickname" required>
-      <label for="roomInput">Nom du salon</label>
-      <input class="field" id="roomInput" maxlength="32" placeholder="Ex. amis123" required>
-      <button class="primary" id="joinButton" type="submit">Entrer dans le chat →</button>
+      <label class="field">Ton pseudo
+        <input id="nameInput" maxlength="24" placeholder="Ex. Lolo" autocomplete="nickname" required>
+      </label>
+      <label class="field">Nom du salon
+        <input id="roomInput" maxlength="40" placeholder="Ex. potes" value="general" required>
+      </label>
+      <button class="primary full" type="submit">Entrer dans le salon →</button>
     </form>
-    <div class="note">Pas de compte nécessaire pour le moment.</div>
+    <p class="note">Utilise le même nom de salon que tes amis pour discuter ensemble.</p>
   </section>
 
-  <section id="chatScreen">
-    <div class="room-info">Salon : <strong id="roomName"></strong></div>
-    <main id="messages" aria-live="polite"></main>
-    <div class="composer-wrap">
-      <div id="voiceStatus">🔴 Enregistrement : <span id="voiceTimer">0:00 / 0:20</span> — appuie sur ■ pour envoyer</div>
-      <form class="composer" id="messageForm">
-        <button class="icon-button" id="imageButton" type="button" title="Envoyer une photo">＋</button>
-        <input id="imageInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
-        <input id="messageInput" maxlength="500" placeholder="Écris un message..." autocomplete="off">
-        <button class="icon-button" id="micButton" type="button" title="Message vocal">🎙️</button>
-        <button class="primary" id="sendButton" type="submit">➤</button>
-      </form>
+  <section id="chat" class="hidden">
+    <div class="topbar panel">
+      <button id="backButton" class="round" title="Quitter le salon">←</button>
+      <div class="room-title"><strong id="roomLabel">Salon</strong><small id="nameLabel"></small></div>
+      <button id="callButton" class="round" title="Appel audio">📞</button>
     </div>
+
+    <section id="callPanel" class="panel hidden">
+      <strong>📞 Appel audio NiM</strong>
+      <div id="callStatus">Prêt à rejoindre l'appel</div>
+      <p>Autorise l'accès au micro pour parler avec les membres du salon.</p>
+      <div class="call-actions">
+        <button id="joinCallButton" class="primary">Rejoindre</button>
+        <button id="muteButton" class="round hidden">🎙️ Couper le micro</button>
+        <button id="hangupButton" class="round hidden">Raccrocher</button>
+      </div>
+      <div id="remoteAudios"></div>
+    </section>
+
+    <div id="messages" class="panel" aria-live="polite"></div>
+    <div id="recordStatus"></div>
+    <form id="messageForm" class="composer panel">
+      <button type="button" id="photoButton" class="round" title="Envoyer une photo">🖼️</button>
+      <input id="photoInput" type="file" accept="image/jpeg,image/png,image/webp" class="hidden">
+      <button type="button" id="recordButton" class="round" title="Enregistrer un vocal">🎙️</button>
+      <input id="messageInput" maxlength="2000" placeholder="Écris un message…" autocomplete="off">
+      <button id="sendButton" class="primary" type="submit" aria-label="Envoyer">➤</button>
+    </form>
   </section>
 </div>
-<div id="toast" role="status"></div>
+<div id="toast" class="hidden"></div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
 (() => {
-  const $ = id => document.getElementById(id);
-
-  const socket = io({ autoConnect: false });
+  const $ = (id) => document.getElementById(id);
+  const socket = io();
 
   let myName = "";
   let myRoom = "";
   let joined = false;
-  let joinRequested = false;
-  let joinTimeout = null;
   let recorder = null;
-  let stream = null;
-  let chunks = [];
-  let recordStart = 0;
-  let recordInterval = null;
-  let recordTimeout = null;
-  let stopping = false;
-  let toastTimeout = null;
+  let recordingChunks = [];
+  let recordingTimeout = null;
+  let localStream = null;
+  let inCall = false;
+  let muted = false;
+  const peers = new Map();
+  const pendingCandidates = new Map();
 
-  function toast(text) {
-    $("toast").textContent = text;
-    $("toast").style.display = "block";
-    clearTimeout(toastTimeout);
-    toastTimeout = setTimeout(() => $("toast").style.display = "none", 3500);
+  function toast(message) {
+    const el = $("toast");
+    el.textContent = message;
+    el.classList.remove("hidden");
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => el.classList.add("hidden"), 3000);
   }
 
-  function setStatus(text) {
-    $("connectionStatus").textContent = text;
+  function showChat() {
+    $("home").classList.add("hidden");
+    $("chat").classList.remove("hidden");
+    $("roomLabel").textContent = "#" + myRoom;
+    $("nameLabel").textContent = "Connecté en tant que " + myName;
+    joined = true;
   }
 
-  function updateJoinButton(text, disabled) {
-    $("joinButton").textContent = text;
-    $("joinButton").disabled = disabled;
+  function showHome() {
+    $("chat").classList.add("hidden");
+    $("home").classList.remove("hidden");
+    joined = false;
   }
 
-  function sendJoinRequest() {
-    if (!socket.connected || !joinRequested || !myName || !myRoom) return;
-    setStatus("● Connexion...");
-    socket.emit("join-room", { name: myName, room: myRoom });
-  }
-
-  $("joinForm").addEventListener("submit", event => {
+  $("joinForm").addEventListener("submit", (event) => {
     event.preventDefault();
-
     myName = $("nameInput").value.trim().slice(0, 24);
-    myRoom = $("roomInput").value.trim().slice(0, 32);
+    myRoom = $("roomInput").value.trim().slice(0, 40);
 
-    if (!myName || !myRoom) {
-      toast("Entre un pseudo et un nom de salon.");
+    if (!myName || !/^[a-zA-Z0-9_-]{1,40}$/.test(myRoom)) {
+      toast("Choisis un pseudo et un salon sans espaces ni caractères spéciaux.");
       return;
     }
-
-    joined = false;
-    joinRequested = true;
-    updateJoinButton("Connexion...", true);
-
-    clearTimeout(joinTimeout);
-    joinTimeout = setTimeout(() => {
-      if (!joined) {
-        updateJoinButton("Réessayer →", false);
-        setStatus("● À vérifier");
-        toast("La connexion prend trop de temps. Réessaie.");
-      }
-    }, 10000);
-
-    if (socket.connected) {
-      sendJoinRequest();
-    } else {
-      socket.connect();
-    }
+    socket.emit("join-room", { name: myName, room: myRoom });
   });
 
   socket.on("connect", () => {
-    setStatus("● Connecté");
-    if (joinRequested) sendJoinRequest();
+    if (myName && myRoom && !joined) {
+      socket.emit("join-room", { name: myName, room: myRoom });
+    }
   });
 
-  socket.on("connect_error", () => {
-    setStatus("● Hors ligne");
-    updateJoinButton("Réessayer →", false);
-    toast("Connexion au serveur impossible. Réessaie.");
+  socket.on("joined", ({ name, room }) => {
+    myName = name;
+    myRoom = room;
+    showChat();
   });
 
-  socket.on("disconnect", () => {
-    setStatus("● Reconnexion...");
-    if (joined) toast("Connexion perdue, tentative de reconnexion...");
-  });
+  socket.on("join-error", (message) => toast(message));
 
-  socket.on("joined", data => {
-    clearTimeout(joinTimeout);
-    joined = true;
-    joinRequested = true;
-    myName = data.name || myName;
-    myRoom = data.room || myRoom;
-
-    $("roomName").textContent = myRoom;
-    $("joinScreen").style.display = "none";
-    $("chatScreen").style.display = "flex";
-    updateJoinButton("Entrer dans le chat →", false);
-    setStatus("● Connecté");
-    $("messageInput").focus();
-    scrollBottom();
-  });
-
-  socket.on("history", history => {
+  socket.on("history", (history) => {
     $("messages").replaceChildren();
-    if (Array.isArray(history)) history.forEach(renderMessage);
+    (history || []).forEach(renderMessage);
+    scrollToBottom();
   });
 
-  socket.on("chat-message", renderMessage);
-
-  socket.on("error-message", message => {
-    toast(message || "Une erreur est survenue.");
-    if (!joined) updateJoinButton("Réessayer →", false);
+  socket.on("new-message", (message) => {
+    renderMessage(message);
+    scrollToBottom();
   });
 
-  function scrollBottom() {
-    requestAnimationFrame(() => {
-      $("messages").scrollTop = $("messages").scrollHeight;
-    });
-  }
+  socket.on("member-left", ({ name }) => {
+    // L'info est discrète ; les messages système sont gérés par le serveur.
+  });
 
-  function renderMessage(msg) {
-    if (!msg || typeof msg !== "object") return;
+  function renderMessage(message) {
+    if (!message) return;
+    const wrapper = document.createElement("div");
 
-    if (msg.type === "system") {
-      const el = document.createElement("div");
-      el.className = "system";
-      el.textContent = msg.text || "";
-      $("messages").appendChild(el);
-      scrollBottom();
+    if (message.type === "system") {
+      wrapper.className = "system";
+      wrapper.textContent = message.text || "";
+      $("messages").appendChild(wrapper);
       return;
     }
 
-    const wrapper = document.createElement("article");
-    wrapper.className = "message" + (msg.name === myName ? " mine" : "");
+    wrapper.className = "message" + (message.name === myName ? " mine" : "");
 
-    if (msg.name !== myName) {
-      const sender = document.createElement("div");
-      sender.className = "sender";
-      sender.textContent = msg.name || "Membre";
-      wrapper.appendChild(sender);
-    }
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    const date = new Date(message.time || Date.now());
+    meta.textContent = (message.name || "Membre") + " · " +
+      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    wrapper.appendChild(meta);
 
-    const bubble = document.createElement("div");
-    bubble.className = "bubble";
-
-    if (msg.type === "text") {
-      bubble.textContent = msg.text || "";
-    } else if (msg.type === "image") {
+    if (message.type === "text") {
+      const text = document.createElement("div");
+      text.className = "body";
+      text.textContent = message.text || "";
+      wrapper.appendChild(text);
+    } else if (message.type === "image" && message.image) {
       const img = document.createElement("img");
-      img.className = "chat-image";
-      img.alt = "Photo envoyée";
+      img.src = message.image;
+      img.alt = "Photo envoyée dans le chat";
       img.loading = "lazy";
-      img.src = msg.image;
-      bubble.appendChild(img);
-    } else if (msg.type === "audio") {
-      bubble.classList.add("audio-bubble");
-
-      const title = document.createElement("div");
-      title.className = "audio-title";
-      title.textContent = "🎙️ Message vocal";
-
-      const player = document.createElement("audio");
-      player.controls = true;
-      player.preload = "metadata";
-      player.src = msg.audio;
-
-      bubble.append(title, player);
-    } else {
-      return;
+      wrapper.appendChild(img);
+    } else if (message.type === "audio" && message.audio) {
+      const audio = document.createElement("audio");
+      audio.controls = true;
+      audio.preload = "metadata";
+      audio.src = message.audio;
+      audio.setAttribute("playsinline", "");
+      audio.addEventListener("error", () => {
+        toast("Ce vocal n'est pas lisible par ce navigateur.");
+      }, { once: true });
+      wrapper.appendChild(audio);
     }
 
-    wrapper.appendChild(bubble);
-
-    const time = document.createElement("div");
-    time.className = "time";
-    const date = new Date(msg.time);
-    time.textContent = Number.isNaN(date.getTime()) ? "" :
-      date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-
-    wrapper.appendChild(time);
     $("messages").appendChild(wrapper);
-    scrollBottom();
   }
 
-  $("messageForm").addEventListener("submit", event => {
+  function scrollToBottom() {
+    $("messages").scrollTop = $("messages").scrollHeight;
+  }
+
+  $("messageForm").addEventListener("submit", (event) => {
     event.preventDefault();
+    if (!joined) return;
     const text = $("messageInput").value.trim();
-
-    if (!joined || !socket.connected) {
-      toast("Attends la connexion au salon.");
-      return;
-    }
     if (!text) return;
-
     socket.emit("send-message", { type: "text", text });
     $("messageInput").value = "";
     $("messageInput").focus();
   });
 
-  $("imageButton").addEventListener("click", () => {
-    if (joined) $("imageInput").click();
-    else toast("Entre d'abord dans un salon.");
-  });
+  // Photos envoyées dans le chat uniquement.
+  $("photoButton").addEventListener("click", () => $("photoInput").click());
 
-  $("imageInput").addEventListener("change", async () => {
-    const file = $("imageInput").files[0];
-    $("imageInput").value = "";
+  $("photoInput").addEventListener("change", async () => {
+    const file = $("photoInput").files && $("photoInput").files[0];
+    $("photoInput").value = "";
     if (!file || !joined) return;
-
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      toast("Choisis une photo JPG, PNG ou WebP.");
+    if (!file.type.startsWith("image/")) {
+      toast("Choisis un fichier image.");
       return;
     }
-    if (file.size > 12 * 1024 * 1024) {
-      toast("Photo trop lourde. Choisis-en une plus petite.");
-      return;
-    }
-
-    $("imageButton").disabled = true;
 
     try {
-      const url = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      const img = new Image();
-      img.src = url;
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-      });
-
-      const scale = Math.min(1, 900 / Math.max(img.width, img.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.round(img.width * scale));
-      canvas.height = Math.max(1, Math.round(img.height * scale));
-      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      const compressed = canvas.toDataURL("image/jpeg", 0.68);
-      if (compressed.length > 750000) {
-        toast("Photo trop lourde. Essaie une autre image.");
+      const compressed = await compressImage(file);
+      if (compressed.length > 740000) {
+        toast("La photo est trop lourde. Essaie une image plus petite.");
         return;
       }
-
       socket.emit("send-message", { type: "image", image: compressed });
-    } catch {
+    } catch (error) {
       toast("Impossible de préparer cette photo.");
-    } finally {
-      $("imageButton").disabled = false;
     }
   });
 
-  function stopMicrophone() {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      stream = null;
+  function compressImage(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = reject;
+        img.onload = () => {
+          const maxSide = 1100;
+          const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(img.width * scale));
+          canvas.height = Math.max(1, Math.round(img.height * scale));
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", 0.72));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Vocaux : choisit un format pris en charge par le navigateur.
+  $("recordButton").addEventListener("click", async () => {
+    if (recorder && recorder.state === "recording") {
+      recorder.stop();
+      return;
     }
-  }
+    if (!joined) return;
 
-  function resetRecorderUI() {
-    clearInterval(recordInterval);
-    clearTimeout(recordTimeout);
-    recordInterval = null;
-    recordTimeout = null;
-    $("voiceStatus").classList.remove("active");
-    $("micButton").textContent = "🎙️";
-    $("micButton").disabled = false;
-    stopping = false;
-  }
-
-  async function startRecording() {
-    if (!joined || recorder) return;
-
-    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
-      toast("Ton navigateur ne permet pas l'enregistrement vocal.");
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+      toast("L'enregistrement audio n'est pas disponible dans ce navigateur.");
       return;
     }
 
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeCandidates = [
+        "audio/mp4",
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/ogg"
+      ];
+      const mimeType = mimeCandidates.find((type) =>
+        MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)
+      );
 
-      const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
-      let options = {};
-      const supported = types.find(type => MediaRecorder.isTypeSupported(type));
-      if (supported) options.mimeType = supported;
+      recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
 
-      recorder = new MediaRecorder(stream, options);
-      chunks = [];
-      stopping = false;
+      recordingChunks = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) recordingChunks.push(event.data);
+      };
 
-      recorder.addEventListener("dataavailable", event => {
-        if (event.data && event.data.size) chunks.push(event.data);
-      });
+      recorder.onstop = async () => {
+        clearTimeout(recordingTimeout);
+        $("recordStatus").textContent = "";
+        $("recordButton").textContent = "🎙️";
+        stream.getTracks().forEach(track => track.stop());
 
-      recorder.addEventListener("stop", async () => {
-        const mime = recorder?.mimeType || chunks[0]?.type || "audio/webm";
-        const blob = new Blob(chunks, { type: mime });
-
-        recorder = null;
-        chunks = [];
-        stopMicrophone();
-        resetRecorderUI();
-
-        if (!blob.size) {
-          toast("Aucun son enregistré. Réessaie.");
+        if (!recordingChunks.length) {
+          toast("Le vocal est vide, réessaie.");
           return;
         }
-        if (blob.size > 540000) {
-          toast("Vocal trop lourd. Essaie un enregistrement plus court.");
+
+        const type = recorder.mimeType || recordingChunks[0].type || "audio/webm";
+        const blob = new Blob(recordingChunks, { type });
+        if (blob.size > 550000) {
+          toast("Le vocal est trop lourd. Fais un vocal plus court.");
           return;
         }
 
         try {
-          const data = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          });
-
-          if (typeof data !== "string" || data.length > 750000) {
-            toast("Vocal trop lourd. Réessaie plus court.");
+          const dataUrl = await blobToDataURL(blob);
+          if (dataUrl.length > 740000) {
+            toast("Le vocal est trop lourd. Fais un vocal plus court.");
             return;
           }
-          if (joined && socket.connected) {
-            socket.emit("send-message", { type: "audio", audio: data });
-          } else {
-            toast("Tu n'es plus connecté au salon.");
-          }
-        } catch {
+          socket.emit("send-message", { type: "audio", audio: dataUrl });
+        } catch (error) {
           toast("Impossible de préparer le vocal.");
         }
-      });
-
-      recorder.addEventListener("error", () => {
-        recorder = null;
-        stopMicrophone();
-        resetRecorderUI();
-        toast("Erreur pendant l'enregistrement.");
-      });
-
-      recorder.start();
-      recordStart = Date.now();
-      $("voiceStatus").classList.add("active");
-      $("micButton").textContent = "■";
-      $("micButton").disabled = false;
-
-      const updateTimer = () => {
-        const seconds = Math.min(20, Math.floor((Date.now() - recordStart) / 1000));
-        $("voiceTimer").textContent = `0:${String(seconds).padStart(2, "0")} / 0:20`;
       };
 
-      updateTimer();
-      recordInterval = setInterval(updateTimer, 250);
-      recordTimeout = setTimeout(stopRecording, 20000);
-    } catch {
-      stopMicrophone();
-      recorder = null;
-      resetRecorderUI();
-      toast("Autorise l'accès au microphone puis réessaie.");
+      recorder.start();
+      $("recordButton").textContent = "⏹️";
+      $("recordStatus").textContent = "🔴 Enregistrement… appuie sur ⏹️ pour envoyer (20 s max)";
+      recordingTimeout = setTimeout(() => {
+        if (recorder && recorder.state === "recording") recorder.stop();
+      }, 20000);
+    } catch (error) {
+      toast("Autorise le micro dans les paramètres du navigateur.");
     }
-  }
-
-  function stopRecording() {
-    if (!recorder || recorder.state === "inactive" || stopping) return;
-    stopping = true;
-    $("micButton").disabled = true;
-    clearTimeout(recordTimeout);
-    try {
-      recorder.stop();
-    } catch {
-      recorder = null;
-      stopMicrophone();
-      resetRecorderUI();
-      toast("Impossible d'arrêter l'enregistrement.");
-    }
-  }
-
-  $("micButton").addEventListener("click", () => {
-    if (recorder) stopRecording();
-    else startRecording();
   });
 
-  window.addEventListener("beforeunload", stopMicrophone);
-})();
-</script>
-</body>
-  </html>
-  
+  function blobToDataURL(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  // Appels audio WebRTC : aucune caméra n'est demandée.
+  $("callButton").addEventListener("click", () => {
+    $("callPanel").classList.toggle("hidden");
+  });
+
+  $("joinCallButton").addEventListener("click", joinCall);
+  $("hangupButton").addEventListener("click", leaveCall);
+
+  $("muteButton").addEventListener("click", () => {
+    if (!localStream) return;
+    muted = !muted;
+    localStream.getAudioTracks().forEach(track => track.enabled = !muted);
+    $("muteButton").textContent = muted ? "🔇 Activer le micro" : "🎙️ Couper le micro";
+  });
+
+  async function joinCall() {
+    if (inCall) return;
+    if (!joined) return;
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast("Les appels audio nécessitent l'accès au micro via HTTPS.");
+      return;
+    }
+
+    $("joinCallButton").disabled = true;
+    $("callStatus").textContent = "Connexion au micro…";
+
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: false
+      });
+      inCall = true;
+      muted = false;
+      $("joinCallButton").classList.add("hidden");
+      $("muteButton").classList.remove("hidden");
+      $("hangupButton").classList.remove("hidden");
+      $("callStatus").textContent = "Connexion à l'appel audio…";
+      socket.emit("voice-join");
+    } catch (error) {
+      $("callStatus").textContent = "Micro indisponible.";
+      toast("Autorise le micro dans les paramètres du navigateur.");
+    } finally {
+      $("joinCallButton").disabled = false;
+    }
+  }
+
+  function makePeer(peerId) {
+    if (peers.has(peerId)) return peers.get(peerId);
+
+    const pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" }
+      ]
+    });
+
+    if (localStream) {
+      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+    }
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit("voice-signal", {
+          to: peerId,
+          signal: { candidate: event.candidate }
+        });
+      }
+    };
+
+    pc.ontrack = (event) => {
+      let audio = document.getElementById("remote-" + peerId);
+      if (!audio) {
+        audio = document.createElement("audio");
+        audio.id = "remote-" + peerId;
+        audio.autoplay = true;
+        audio.controls = true;
+        audio.setAttribute("playsinline", "");
+        audio.style.display = "block";
+        audio.style.width = "100%";
+        audio.style.marginTop = "8px";
+        $("remoteAudios").appendChild(audio);
+      }
+      if (event.streams && event.streams[0]) {
+        audio.srcObject = event.streams[0];
+        audio.play().catch(() => {
+          $("callStatus").textContent = "Appuie sur lecture si le son ne démarre pas.";
+        });
+      }
+    };
+
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === "connected") {
+        $("callStatus").textContent = "🟢 Appel audio connecté";
+      } else if (pc.connectionState === "failed") {
+        $("callStatus").textContent = "Connexion impossible sur ce réseau.";
+      }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      if (pc.iceConnectionState === "failed") {
+        $("callStatus").textContent = "Échec réseau. Un serveur TURN peut être nécessaire.";
+      }
+    };
+
+    peers.set(peerId, pc);
+    pendingCandidates.set(peerId, []);
+    return pc;
+  }
+
+  async function createOffer(peerId) {
+    try {
+      const pc = makePeer(peerId);
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      socket.emit("voice-signal", {
+        to: peerId,
+        signal: { description: pc.localDescription }
+      });
+    } catch (error) {
+      console.error("Erreur offre audio :", error);
+    }
+  }
+
+  socket.on("voice-peers", async (peerIds) => {
+    if (!inCall) return;
+    for (const peerId of peerIds || []) {
+      await createOffer(peerId);
+    }
+    if (!peerIds || peerIds.length === 0) {
+      $("callStatus").textContent = "Tu es dans l'appel. En attente des autres…";
+    }
+  });
+
+  socket.on("voice-peer-joined", () => {
+    if (inCall) $("callStatus").textContent = "Un membre rejoint l'appel…";
+  });
+
+  socket.on("voice-signal", async ({ from, signal }) => {
+    if (!inCall || !from || !signal) return;
+
+    try {
+      const pc = makePeer(from);
+
+      if (signal.description) {
+        await pc.setRemoteDescription(signal.description);
+
+        const queued = pendingCandidates.get(from) || [];
+        for (const candidate of 
