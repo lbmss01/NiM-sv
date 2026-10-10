@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#100b18">
 <title>NiM — Next is Me</title>
 <script src="/socket.io/socket.io.js"></script>
@@ -13,18 +12,17 @@
 body{margin:0;background:radial-gradient(ellipse at top,#301342,var(--bg) 55%);color:var(--text);font:15px system-ui,sans-serif;min-height:100dvh}
 button,input{font:inherit}
 button{cursor:pointer;border:0;border-radius:13px;padding:11px 14px;color:white;background:linear-gradient(120deg,#8244d9,#c541a8);font-weight:700}
-button:disabled{opacity:.5}
-input{min-width:0;width:100%;background:#100b18;border:1px solid var(--line);border-radius:13px;padding:12px;color:white;outline:none}
-input:focus{border-color:var(--violet)}
+input{min-width:0;width:100%;background:#100b18;border:1px solid var(--line);border-radius:13px;padding:12px;color:white}
+.hidden{display:none!important}
 .app{max-width:720px;margin:auto;min-height:100dvh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom)}
 header{display:flex;align-items:center;justify-content:space-between;padding:16px 4px}
 .logo{font-size:29px;font-weight:950;letter-spacing:-1px;background:linear-gradient(90deg,#fff,#d5a1ff,#ff70ce);color:transparent;background-clip:text}
-.muted{color:var(--muted)}.small{font-size:12px}.hidden{display:none!important}
+.muted{color:var(--muted)}.small{font-size:12px}
 .panel{background:#1b1225ed;border:1px solid var(--line);border-radius:22px;padding:15px}
 .stack{display:flex;flex-direction:column;gap:11px}
 .title{font-size:21px;font-weight:850;margin:3px 0 12px}
 .pill{font-size:11px;padding:5px 9px;border-radius:30px;background:#382447}
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 0 calc(10px + env(safe-area-inset-bottom));position:sticky;bottom:0;background:#100b18f5;backdrop-filter:blur(16px);z-index:3}
+.tabs{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:10px 0;position:sticky;bottom:0;background:#100b18f5;z-index:3}
 .tab{background:#24182e;border:1px solid var(--line);color:#cbbbd7}
 .tab.active{background:linear-gradient(120deg,#773cc2,#b83b9d);color:white}
 .list-item{width:100%;display:flex;align-items:center;gap:11px;text-align:left;background:#24182e;border:1px solid #402c50;border-radius:16px;padding:12px;color:white;margin:0 0 8px}
@@ -32,496 +30,340 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .grow{flex:1}.online{color:#6ce9a0}
 .chathead{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .secondary,.iconbtn{background:#2b2037;border:1px solid var(--line)}
-.messages{height:min(53dvh,470px);min-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:9px;padding:8px 1px 14px}
+.messages{height:min(52dvh,470px);min-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:9px;padding:8px 1px 14px}
 .bubble-row{max-width:84%;align-self:flex-start;display:flex;flex-direction:column}
 .bubble-row.mine{align-self:flex-end;align-items:flex-end}
 .bname{font-size:11px;color:var(--muted);margin:0 8px 3px}
-.bubble{padding:10px 13px;border-radius:17px 17px 17px 5px;background:var(--bubble,#3b2b4c);overflow-wrap:anywhere;white-space:pre-wrap}
+.bubble{padding:10px 13px;border-radius:17px 17px 17px 5px;background:#3b2b4c;overflow-wrap:anywhere;white-space:pre-wrap}
 .mine .bubble{background:linear-gradient(135deg,#783cba,#a23b9e);border-radius:17px 17px 5px 17px}
-.bubble img,.bubble video{display:block;max-width:100%;max-height:260px;border-radius:10px}
+.bubble img{display:block;max-width:100%;max-height:260px;border-radius:10px}
 .bubble audio{max-width:220px}
 .meta{font-size:10px;color:#cbb9d8;margin:4px 7px 0}
-.compose{display:flex;gap:7px;align-items:center}
+.compose{display:flex;gap:7px;align-items:center;margin-top:10px}
 .compose input{flex:1}
-.iconbtn{padding:10px 12px}
 .filelabel{background:#2b2037;border:1px solid var(--line);border-radius:13px;padding:10px;cursor:pointer}
 .filelabel input{display:none}
 .empty{text-align:center;padding:24px 8px;color:var(--muted)}
 .notice{font-size:12px;color:#d8bce9;line-height:1.5}
-.callbox{position:fixed;inset:0;z-index:10;background:#09060df7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px}
-.callbox video{width:min(92vw,540px);max-height:55dvh;background:#24182e;border-radius:20px;object-fit:cover}
-.call-actions{display:flex;gap:12px}
-.danger{background:#d63c62}
-#localVideo{width:125px;max-height:100px;position:absolute;right:18px;top:65px;border:1px solid #a66bff}
+#callbox{position:fixed;inset:0;z-index:10;background:#09060df7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px}
+#remoteVideo{width:min(92vw,540px);max-height:55dvh;background:#24182e;border-radius:20px}
+#localVideo{width:110px;position:absolute;right:18px;top:65px}
 </style>
 </head>
 <body>
 <div class="app">
 <header>
-  <div><div class="logo">NiM<span style="color:#ff70ce">.</span></div><div class="muted small">NEXT IS ME</div></div>
-  <span class="pill" id="status">Connexion…</span>
+ <div><div class="logo">NiM<span style="color:#ff70ce">.</span></div><div class="muted small">NEXT IS ME</div></div>
+ <span class="pill" id="status">Connexion…</span>
 </header>
 
-<main>
 <section id="login" class="panel stack">
-  <div class="title">Bienvenue sur NiM 💜</div>
-  <div class="muted">Connecte-toi avec ton pseudo et choisis un salon.</div>
-  <input id="pseudo" maxlength="20" placeholder="Ton pseudo">
-  <input id="roomInput" maxlength="32" value="general" placeholder="Salon de départ">
-  <button id="enterBtn">Entrer sur NiM</button>
-  <div class="notice">Les messages sont temporaires. Les pseudos ne sont pas des comptes sécurisés : ne partage pas d'informations personnelles.</div>
+ <div class="title">Bienvenue sur NiM 💜</div>
+ <div class="muted">Choisis ton pseudo pour commencer.</div>
+ <input id="pseudo" maxlength="20" placeholder="Ton pseudo">
+ <button id="enter">Entrer sur NiM</button>
+ <div class="notice">Les messages sont temporaires. N'envoie pas d'informations personnelles.</div>
 </section>
 
-<section id="inside" class="hidden">
-  <section id="messagesPage" class="panel">
-    <div id="dmListPage">
-      <div class="title">Messages privés 💬</div>
-      <div class="muted small" style="margin-bottom:12px">Appuie sur une personne en ligne pour discuter en privé.</div>
-      <div id="onlineList"></div>
-      <div id="dmList"></div>
-    </div>
-    <div id="dmChatPage" class="hidden">
-      <div class="chathead">
-        <button class="secondary" id="backDm">←</button>
-        <div class="avatar" id="dmAvatar">N</div>
-        <div class="grow"><b id="dmTitle">Conversation</b><div class="muted small">Privé · 1 à 1</div></div>
-        <button class="iconbtn" id="audioCall" title="Appel audio">☎</button>
-        <button class="iconbtn" id="videoCall" title="Appel vidéo">▣</button>
-      </div>
-      <div id="dmMessages" class="messages"></div>
-      <div class="compose">
-        <label class="filelabel">＋<input id="dmFile" type="file" accept="image/*,video/*"></label>
-        <button class="iconbtn" id="dmVoice" title="Vocal">🎙</button>
-        <input id="dmText" placeholder="Écrire un message…">
-        <button id="dmSend">➤</button>
-      </div>
-      <div class="muted small" style="margin-top:7px">Vocal : 15 secondes maximum.</div>
-    </div>
-  </section>
+<main id="inside" class="hidden">
+ <section id="salonsPage" class="panel">
+  <div id="roomList">
+   <div class="title">Salons 👥</div>
+   <div id="roomChoices"></div>
+   <div class="compose"><input id="newRoom" placeholder="Créer ou rejoindre un salon"><button id="joinRoom">Go</button></div>
+  </div>
+  <div id="roomChat" class="hidden">
+   <div class="chathead"><button class="secondary" id="backRoom">←</button><div class="grow"><b id="roomTitle"></b><div id="roomPeople" class="muted small"></div></div></div>
+   <div id="roomMessages" class="messages"></div>
+   <div class="compose">
+    <label class="filelabel">📷<input id="roomPhoto" type="file" accept="image/*"></label>
+    <button class="iconbtn" id="roomVoice">🎙️</button>
+    <input id="roomText" placeholder="Message au salon…">
+    <button id="roomSend">➤</button>
+   </div>
+  </div>
+ </section>
 
-  <section id="salonsPage" class="panel hidden">
-    <div id="roomListPage">
-      <div class="title">Salons 👥</div>
-      <div class="muted small" style="margin-bottom:12px">Choisis un salon ou crée le tien.</div>
-      <div id="roomChoices"></div>
-      <div class="compose"><input id="newRoom" placeholder="Nom d'un salon"><button id="joinCustom">Rejoindre</button></div>
-    </div>
-    <div id="roomChatPage" class="hidden">
-      <div class="chathead">
-        <button class="secondary" id="backRoom">←</button>
-        <div class="avatar">#</div>
-        <div class="grow"><b id="roomTitle">Salon</b><div id="roomCount" class="muted small"></div></div>
-      </div>
-      <div id="roomPeople" class="muted small" style="margin-bottom:9px"></div>
-      <div id="roomMessages" class="messages"></div>
-      <div class="compose">
-        <label class="filelabel">＋<input id="roomFile" type="file" accept="image/*,video/*"></label>
-        <button class="iconbtn" id="roomVoice">🎙</button>
-        <input id="roomText" placeholder="Écrire au salon…">
-        <button id="roomSend">➤</button>
-      </div>
-    </div>
-  </section>
-
-  <section id="profilePage" class="panel hidden">
-    <div class="title">Mon profil</div>
-    <div style="font-size:48px;text-align:center;padding:15px">🪩</div>
-    <div id="profileName" style="font-size:23px;font-weight:850;text-align:center"></div>
-    <div class="muted" style="text-align:center;margin:8px 0 22px">Membre de NiM</div>
-    <div class="list-item"><div class="avatar">💬</div><div><b>Messages</b><div class="muted small">Discussions privées et appels.</div></div></div>
-    <div class="list-item"><div class="avatar">👥</div><div><b>Salons</b><div class="muted small">Discussions de groupe.</div></div></div>
-    <button class="secondary" id="logout" style="width:100%">Se déconnecter</button>
-  </section>
-</section>
+ <section id="messagesPage" class="panel hidden">
+  <div id="dmListPage">
+   <div class="title">Messages privés 💬</div>
+   <div class="muted small">Les personnes en ligne dans ton salon :</div>
+   <div id="people"></div><div id="dmList"></div>
+  </div>
+  <div id="dmChat" class="hidden">
+   <div class="chathead">
+    <button class="secondary" id="backDm">←</button>
+    <div class="avatar">💬</div>
+    <div class="grow"><b id="dmTitle"></b><div class="muted small">Conversation privée</div></div>
+    <button class="iconbtn" id="audioCall">☎</button>
+    <button class="iconbtn" id="videoCall">▣</button>
+   </div>
+   <div id="dmMessages" class="messages"></div>
+   <div class="compose">
+    <label class="filelabel">📷<input id="dmPhoto" type="file" accept="image/*"></label>
+    <button class="iconbtn" id="dmVoice">🎙️</button>
+    <input id="dmText" placeholder="Message privé…">
+    <button id="dmSend">➤</button>
+   </div>
+   <div class="muted small">Vocal limité à 15 secondes.</div>
+  </div>
+ </section>
 </main>
 
 <nav id="nav" class="tabs hidden">
-  <button class="tab active" data-page="messages">💬 Messages</button>
-  <button class="tab" data-page="salons">👥 Salons</button>
-  <button class="tab" data-page="profile">👤 Profil</button>
+ <button class="tab active" data-page="salons">👥 Salons</button>
+ <button class="tab" data-page="messages">💬 Messages</button>
 </nav>
 </div>
 
-<div id="callbox" class="callbox hidden">
-  <div class="title" id="callTitle">Appel NiM</div>
-  <div id="callState" class="muted">Connexion…</div>
-  <video id="remoteVideo" autoplay playsinline></video>
-  <video id="localVideo" autoplay muted playsinline class="hidden"></video>
-  <div class="call-actions">
-    <button id="acceptCall" class="hidden">Répondre</button>
-    <button id="hangup" class="danger">Raccrocher</button>
-  </div>
-  <div class="notice">Certains réseaux peuvent bloquer les appels sans serveur TURN.</div>
+<div id="callbox" class="hidden">
+ <div class="title" id="callTitle">Appel NiM</div>
+ <div id="callState" class="muted">Connexion…</div>
+ <video id="remoteVideo" autoplay playsinline></video>
+ <video id="localVideo" autoplay muted playsinline class="hidden"></video>
+ <div style="display:flex;gap:12px">
+  <button id="acceptCall" class="hidden">Répondre</button>
+  <button id="hangup" style="background:#d63c62">Raccrocher</button>
+ </div>
+ <div class="notice">Les appels nécessitent une connexion compatible.</div>
 </div>
 
 <script>
 const socket = io();
 const $ = id => document.getElementById(id);
+let myName="", currentRoom="general", currentPage="salons";
+let users=[], chats=[], roomHistory=[], dmHistory=[];
+let activeDm=null, activeTarget=null, activeName="";
+let recorder=null, pc=null, localStream=null, pendingOffer=null;
+let callKind="audio", candidateQueue=[];
 
-let myName = "";
-let currentRoom = "general";
-let currentPage = "messages";
-let onlineUsers = [];
-let dmList = [];
-let activeDm = null;
-let activeDmName = "";
-let roomHistory = [];
-let dmHistory = [];
-let mediaRecorder = null;
-let pc = null;
-let localStream = null;
-let callTarget = null;
-let callDmId = null;
-let pendingOffer = null;
-let callMode = "audio";
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function time(t){return new Date(t).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
 
-const colors = ["#3a2d50","#243e52","#4a2b3e","#28443d","#514027","#303d60","#563452","#2e4a4c"];
-
-function colorFor(name) {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-  return colors[h % colors.length];
+function page(p){
+ currentPage=p;
+ $("salonsPage").classList.toggle("hidden",p!=="salons");
+ $("messagesPage").classList.toggle("hidden",p!=="messages");
+ document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.page===p));
 }
 
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, c => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  }[c]));
-}
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>page(b.dataset.page));
+socket.on("connect",()=>{$("status").textContent="Connecté"});
+socket.on("disconnect",()=>{$("status").textContent="Déconnecté"});
+socket.on("error-message",m=>alert(m));
 
-function timeOf(time) {
-  return new Date(time).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
-}
-
-function showPage(page) {
-  currentPage = page;
-  ["messages","salons","profile"].forEach(p =>
-    $(p + "Page").classList.toggle("hidden", p !== page)
-  );
-  document.querySelectorAll(".tab").forEach(b =>
-    b.classList.toggle("active", b.dataset.page === page)
-  );
-  if (page === "messages") renderPeople();
-}
-
-$("enterBtn").onclick = () => {
-  const name = $("pseudo").value.trim();
-  const room = $("roomInput").value.trim() || "general";
-  if (!name) return $("pseudo").focus();
-  socket.emit("join", {name, room});
+$("enter").onclick=()=>{
+ myName=$("pseudo").value.trim();
+ if(!myName)return $("pseudo").focus();
+ socket.emit("join",{name:myName,room:"general"});
 };
+$("pseudo").onkeydown=e=>{if(e.key==="Enter")$("enter").click()};
 
-$("pseudo").addEventListener("keydown", e => {
-  if (e.key === "Enter") $("enterBtn").click();
+socket.on("joined",data=>{
+ myName=data.name;currentRoom=data.room;roomHistory=data.history||[];
+ $("login").classList.add("hidden");
+ $("inside").classList.remove("hidden");
+ $("nav").classList.remove("hidden");
+ $("roomTitle").textContent="# "+currentRoom;
+ $("roomList").classList.add("hidden");
+ $("roomChat").classList.remove("hidden");
+ drawRoom();page("salons");
 });
 
-socket.on("connect", () => $("status").textContent = "Connecté");
-socket.on("disconnect", () => $("status").textContent = "Déconnecté");
-socket.on("error-message", message => alert(message));
-
-socket.on("joined", data => {
-  myName = data.name;
-  currentRoom = data.room;
-  roomHistory = data.history || [];
-  $("login").classList.add("hidden");
-  $("inside").classList.remove("hidden");
-  $("nav").classList.remove("hidden");
-  $("profileName").textContent = myName;
-  $("roomTitle").textContent = "# " + currentRoom;
-  renderRoomMessages();
-  showPage("messages");
+socket.on("users",list=>{users=list||[];drawPeople();drawRoomPeople()});
+socket.on("room-message",msg=>{
+ roomHistory.push(msg);if(roomHistory.length>50)roomHistory.shift();drawRoom();
+});
+socket.on("dm-list",list=>{chats=list||[];drawChats()});
+socket.on("dm-open",d=>openDm(d));
+socket.on("dm-available",d=>{if(!chats.some(c=>c.id===d.id))chats.unshift(d);drawChats()});
+socket.on("dm-message",d=>{
+ const chat=chats.find(c=>c.id===d.id);
+ if(chat){chat.history=chat.history||[];chat.history.push(d.msg);if(chat.history.length>50)chat.history.shift()}
+ if(activeDm===d.id){dmHistory.push(d.msg);drawDm()}
+ drawChats();
+});
+socket.on("dm-ended",d=>{
+ chats=chats.filter(c=>c.id!==d.id);
+ if(activeDm===d.id){activeDm=null;$("dmChat").classList.add("hidden");$("dmListPage").classList.remove("hidden")}
+ drawChats();
 });
 
-socket.on("room-users", list => {
-  onlineUsers = list || [];
-  renderPeople();
-  renderRoomPeople();
+function drawPeople(){
+ const box=$("people");box.innerHTML="";
+ users.filter(u=>u.id!==socket.id).forEach(u=>{
+  const b=document.createElement("button");b.className="list-item";
+  b.innerHTML=`<div class="avatar">${esc(u.name[0]?.toUpperCase()||"?")}</div><div class="grow"><b>${esc(u.name)}</b><div class="muted small"><span class="online">● En ligne</span></div></div>›`;
+  b.onclick=()=>socket.emit("start-dm",u.id);box.appendChild(b);
+ });
+ if(!box.children.length)box.innerHTML='<div class="empty">Personne d’autre en ligne dans ce salon.</div>';
+}
+function drawChats(){
+ const box=$("dmList");box.innerHTML=chats.length?'<div class="title">Conversations</div>':"";
+ chats.forEach(c=>{
+  const b=document.createElement("button");b.className="list-item";
+  b.innerHTML=`<div class="avatar">💬</div><div class="grow"><b>${esc(c.name)}</b><div class="muted small">Conversation privée</div></div>›`;
+  b.onclick=()=>openDm(c);box.appendChild(b);
+ });
+}
+function openDm(d){
+ activeDm=d.id;activeTarget=d.target;activeName=d.name;dmHistory=[...(d.history||[])];
+ $("dmTitle").textContent=d.name;
+ $("dmListPage").classList.add("hidden");$("dmChat").classList.remove("hidden");drawDm();
+}
+function messageHtml(m){
+ const mine=m.senderId===socket.id;
+ let body=esc(m.content);
+ if(m.type==="image")body=`<img src="${m.content}" alt="Photo envoyée">`;
+ if(m.type==="audio")body=`<audio controls src="${m.content}"></audio>`;
+ return `<div class="bubble-row ${mine?"mine":""}"><div class="bname">${mine?"Toi":esc(m.sender)}</div><div class="bubble">${body}</div><div class="meta">${time(m.time)}</div></div>`;
+}
+function drawRoom(){$("roomMessages").innerHTML=roomHistory.map(messageHtml).join("");$("roomMessages").scrollTop=$("roomMessages").scrollHeight}
+function drawDm(){$("dmMessages").innerHTML=dmHistory.map(messageHtml).join("");$("dmMessages").scrollTop=$("dmMessages").scrollHeight}
+function drawRoomPeople(){$("roomPeople").textContent=users.map(u=>u.name).join(" · ")}
+
+function showRoom(room){
+ currentRoom=room;roomHistory=[];
+ $("roomTitle").textContent="# "+room;
+ $("roomList").classList.add("hidden");$("roomChat").classList.remove("hidden");
+ socket.emit("join",{name:myName,room});
+}
+["general","gaming","basket","musique","random"].forEach(r=>{
+ const b=document.createElement("button");b.className="list-item";
+ b.innerHTML=`<div class="avatar">#</div><div class="grow"><b>${r}</b><div class="muted small">Salon de discussion</div></div>›`;
+ b.onclick=()=>showRoom(r);$("roomChoices").appendChild(b);
 });
+$("joinRoom").onclick=()=>{
+ const r=$("newRoom").value.trim().replace(/[^a-zA-Z0-9_-]/g,"").slice(0,30);
+ if(r){showRoom(r);$("newRoom").value=""}
+};
+$("backRoom").onclick=()=>{$("roomChat").classList.add("hidden");$("roomList").classList.remove("hidden")};
+$("backDm").onclick=()=>{$("dmChat").classList.add("hidden");$("dmListPage").classList.remove("hidden");activeDm=null};
 
-socket.on("room-message", msg => {
-  roomHistory.push(msg);
-  if (roomHistory.length > 50) roomHistory.shift();
-  renderRoomMessages();
-});
+function sendText(isDm){
+ const f=$(isDm?"dmText":"roomText"),content=f.value.trim();if(!content)return;
+ if(isDm&&activeDm)socket.emit("dm-message",{id:activeDm,type:"text",content});
+ if(!isDm)socket.emit("room-message",{type:"text",content});
+ f.value="";
+}
+$("dmSend").onclick=()=>sendText(true);
+$("roomSend").onclick=()=>sendText(false);
+$("dmText").onkeydown=e=>{if(e.key==="Enter")sendText(true)};
+$("roomText").onkeydown=e=>{if(e.key==="Enter")sendText(false)};
 
-socket.on("dm-list", list => {
-  dmList = list || [];
-  renderDmList();
-});
+function sendPhoto(file,isDm){
+ if(!file)return;
+ if(file.size>2500000){alert("Photo trop lourde : choisis moins de 2,5 Mo.");return}
+ if(!file.type.startsWith("image/")){alert("Choisis une image.");return}
+ const reader=new FileReader();
+ reader.onload=()=>{
+  if(isDm&&activeDm)socket.emit("dm-message",{id:activeDm,type:"image",content:reader.result});
+  if(!isDm)socket.emit("room-message",{type:"image",content:reader.result});
+ };
+ reader.readAsDataURL(file);
+}
+$("dmPhoto").onchange=e=>{sendPhoto(e.target.files[0],true);e.target.value=""};
+$("roomPhoto").onchange=e=>{sendPhoto(e.target.files[0],false);e.target.value=""};
 
-socket.on("dm-opened", data => openDm(data.id, data.name, data.history || []));
-
-socket.on("dm-available", data => {
-  if (!dmList.some(x => x.id === data.id)) dmList.unshift(data);
-  renderDmList();
-});
-
-socket.on("dm-message", data => {
-  const item = dmList.find(x => x.id === data.id);
-  if (item) {
-    item.history = item.history || [];
-    item.history.push(data.msg);
-    if (item.history.length > 50) item.history.shift();
-  }
-
-  if (activeDm === data.id) {
-    dmHistory.push(data.msg);
-    if (dmHistory.length > 50) dmHistory.shift();
-    renderDmMessages();
-    if (data.msg.senderId !== socket.id) {
-      socket.emit("dm-read", {id: activeDm});
-    }
-  }
-  renderDmList();
-});
-
-socket.on("dm-message-status", data => {
-  const item = dmList.find(x => x.id === data.id);
-  if (item && item.history) {
-    const message = item.history.find(x => x.id === data.messageId);
-    if (message) message.status = data.status;
-  }
-
-  if (activeDm === data.id) {
-    const message = dmHistory.find(x => x.id === data.messageId);
-    if (message) message.status = data.status;
-    renderDmMessages();
-  }
-});
-
-socket.on("dm-ended", data => {
-  if (activeDm === data.id) {
-    activeDm = null;
-    $("dmChatPage").classList.add("hidden");
-    $("dmListPage").classList.remove("hidden");
-  }
-  dmList = dmList.filter(x => x.id !== data.id);
-  renderDmList();
-});
-
-document.querySelectorAll(".tab").forEach(button => {
-  button.onclick = () => {
-    showPage(button.dataset.page);
-    $("dmChatPage").classList.add("hidden");
-    $("dmListPage").classList.remove("hidden");
-    $("roomChatPage").classList.add("hidden");
-    $("roomListPage").classList.remove("hidden");
+async function voice(isDm){
+ if(recorder&&recorder.state==="recording"){recorder.stop();return}
+ try{
+  const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+  const chunks=[];recorder=new MediaRecorder(stream);
+  recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+  recorder.onstop=()=>{
+   const blob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});
+   const reader=new FileReader();
+   reader.onload=()=>{
+    if(blob.size>2500000){alert("Vocal trop lourd.");return}
+    if(isDm&&activeDm)socket.emit("dm-message",{id:activeDm,type:"audio",content:reader.result});
+    if(!isDm)socket.emit("room-message",{type:"audio",content:reader.result});
+   };
+   reader.readAsDataURL(blob);stream.getTracks().forEach(t=>t.stop());
   };
+  recorder.start();
+  alert("Enregistrement en cours. Il s'arrête dans 15 secondes. Appuie encore sur 🎙️ pour arrêter plus tôt.");
+  setTimeout(()=>{if(recorder&&recorder.state==="recording")recorder.stop()},15000);
+ }catch(e){alert("Autorise le micro dans les paramètres du navigateur.")}
+}
+$("dmVoice").onclick=()=>voice(true);
+$("roomVoice").onclick=()=>voice(false);
+
+// Appels audio et vidéo via WebRTC
+function signal(data){socket.emit("call-signal",{...data,id:activeDm,target:activeTarget})}
+function makePeer(){
+ pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
+ pc.onicecandidate=e=>{if(e.candidate)signal({kind:"candidate",candidate:e.candidate})};
+ pc.ontrack=e=>{$("remoteVideo").srcObject=e.streams[0]};
+ pc.onconnectionstatechange=()=>{
+  $("callState").textContent=pc?.connectionState||"Connexion…";
+  if(pc&&["failed","disconnected","closed"].includes(pc.connectionState))endCall(false);
+ };
+ candidateQueue=[];
+ return pc;
+}
+async function startCall(kind){
+ if(!activeDm||!activeTarget)return alert("Ouvre une conversation privée d'abord.");
+ try{
+  callKind=kind;
+  localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:kind==="video"});
+  $("callbox").classList.remove("hidden");
+  $("callTitle").textContent=(kind==="video"?"Appel vidéo avec ":"Appel audio avec ")+activeName;
+  $("localVideo").classList.toggle("hidden",kind!=="video");
+  $("localVideo").srcObject=localStream;
+  makePeer();localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+  const offer=await pc.createOffer();await pc.setLocalDescription(offer);
+  signal({kind:"offer",offer,callKind:kind});
+ }catch(e){alert("Impossible d'accéder au micro ou à la caméra. Vérifie les autorisations.");endCall(false)}
+}
+$("audioCall").onclick=()=>startCall("audio");
+$("videoCall").onclick=()=>startCall("video");
+
+socket.on("call-signal",async d=>{
+ try{
+  if(d.kind==="offer"){
+   pendingOffer=d;
+   $("callTitle").textContent="Appel de "+d.fromName;
+   $("callState").textContent=d.callKind==="video"?"Appel vidéo entrant":"Appel audio entrant";
+   $("acceptCall").classList.remove("hidden");$("callbox").classList.remove("hidden");
+   callKind=d.callKind||"audio";return;
+  }
+  if(d.kind==="reject"){endCall(false);return}
+  if(d.kind==="candidate"){
+   if(pc&&pc.remoteDescription)await pc.addIceCandidate(d.candidate);
+   else candidateQueue.push(d.candidate);
+   return;
+  }
+  if(d.kind==="answer"&&pc){
+   await pc.setRemoteDescription(d.answer);
+   for(const c of candidateQueue.splice(0))await pc.addIceCandidate(c);
+  }
+ }catch(e){console.log("Signal d'appel:",e)}
 });
-
-function renderPeople() {
-  const box = $("onlineList");
-  box.innerHTML = "";
-
-  onlineUsers.filter(user => user.id !== socket.id).forEach(user => {
-    const button = document.createElement("button");
-    button.className = "list-item";
-    button.innerHTML = `
-      <div class="avatar">${escapeHtml(user.name.slice(0,1).toUpperCase())}</div>
-      <div class="grow"><b>${escapeHtml(user.name)}</b>
-      <div class="muted small"><span class="online">●</span> En ligne · Appuyer pour écrire</div></div>
-      <span>›</span>`;
-    button.onclick = () => socket.emit("start-dm", user.id);
-    box.appendChild(button);
-  });
-
-  if (!box.children.length) {
-    box.innerHTML = '<div class="empty">Personne d’autre en ligne dans ce salon pour le moment 👀</div>';
-  }
-}
-
-function renderDmList() {
-  const box = $("dmList");
-  box.innerHTML = dmList.length ? '<div class="title" style="margin-top:16px">Conversations</div>' : "";
-
-  dmList.forEach(chat => {
-    const button = document.createElement("button");
-    button.className = "list-item";
-    const last = (chat.history || []).slice(-1)[0];
-    const preview = last
-      ? (last.type === "text" ? last.content : "📎 Média")
-      : "Conversation privée";
-
-    button.innerHTML = `
-      <div class="avatar">${escapeHtml((chat.name || "?").slice(0,1).toUpperCase())}</div>
-      <div class="grow"><b>${escapeHtml(chat.name || "Contact")}</b>
-      <div class="muted small">${escapeHtml(preview)}</div></div><span>›</span>`;
-    button.onclick = () => openDm(chat.id, chat.name, chat.history || []);
-    box.appendChild(button);
-  });
-}
-
-function openDm(id, name, history) {
-  activeDm = id;
-  activeDmName = name;
-  dmHistory = [...history];
-  $("dmTitle").textContent = name;
-  $("dmAvatar").textContent = (name || "?").slice(0,1).toUpperCase();
-  $("dmListPage").classList.add("hidden");
-  $("dmChatPage").classList.remove("hidden");
-  renderDmMessages();
-  socket.emit("dm-read", {id});
-}
-
-function messageHtml(message, privateMode) {
-  const mine = message.senderId === socket.id;
-  let body = "";
-
-  if (message.type === "image") {
-    body = `<img src="${message.content}" alt="Photo">`;
-  } else if (message.type === "video") {
-    body = `<video src="${message.content}" controls playsinline></video>`;
-  } else if (message.type === "audio") {
-    body = `<audio src="${message.content}" controls></audio>`;
-  } else {
-    body = escapeHtml(message.content);
-  }
-
-  const status = privateMode && mine
-    ? " · " + escapeHtml(message.status || "Envoyé")
-    : "";
-
-  return `<div class="bubble-row ${mine ? "mine" : ""}">
-    <div class="bname">${mine ? "Toi" : escapeHtml(message.sender)}</div>
-    <div class="bubble" style="${mine ? "" : "--bubble:" + colorFor(message.sender)}">${body}</div>
-    <div class="meta">${timeOf(message.time)}${status}</div>
-  </div>`;
-}
-
-function renderDmMessages() {
-  $("dmMessages").innerHTML = dmHistory.map(m => messageHtml(m, true)).join("");
-  $("dmMessages").scrollTop = $("dmMessages").scrollHeight;
-}
-
-function renderRoomMessages() {
-  $("roomMessages").innerHTML = roomHistory.map(m => messageHtml(m, false)).join("");
-  $("roomMessages").scrollTop = $("roomMessages").scrollHeight;
-}
-
-function renderRoomPeople() {
-  $("roomPeople").textContent = onlineUsers.map(user => user.name).join(" · ");
-  $("roomCount").textContent = onlineUsers.length + (onlineUsers.length > 1 ? " personnes" : " personne");
-}
-
-function sendText(privateMode) {
-  const field = $(privateMode ? "dmText" : "roomText");
-  const content = field.value.trim();
-  if (!content) return;
-
-  if (privateMode && activeDm) {
-    socket.emit("send-dm-message", {id:activeDm,type:"text",content});
-  } else if (!privateMode) {
-    socket.emit("send-room-message", {type:"text",content});
-  }
-
-  field.value = "";
-}
-
-$("dmSend").onclick = () => sendText(true);
-$("roomSend").onclick = () => sendText(false);
-$("dmText").addEventListener("keydown", e => {if(e.key==="Enter")sendText(true)});
-$("roomText").addEventListener("keydown", e => {if(e.key==="Enter")sendText(false)});
-
-$("backDm").onclick = () => {
-  $("dmChatPage").classList.add("hidden");
-  $("dmListPage").classList.remove("hidden");
-  activeDm = null;
+$("acceptCall").onclick=async()=>{
+ if(!pendingOffer)return;
+ try{
+  const d=pendingOffer;pendingOffer=null;
+  activeDm=d.id;activeTarget=d.from;activeName=d.fromName;
+  localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:callKind==="video"});
+  $("acceptCall").classList.add("hidden");
+  $("localVideo").classList.toggle("hidden",callKind!=="video");$("localVideo").srcObject=localStream;
+  makePeer();localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+  await pc.setRemoteDescription(d.offer);
+  for(const c of candidateQueue.splice(0))await pc.addIceCandidate(c);
+  const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
+  socket.emit("call-signal",{id:d.id,target:d.from,kind:"answer",answer});
+ }catch(e){alert("Impossible de démarrer l'appel. Vérifie les autorisations.");endCall(false)}
 };
-
-$("backRoom").onclick = () => {
-  $("roomChatPage").classList.add("hidden");
-  $("roomListPage").classList.remove("hidden");
-};
-
-function showRoom(room) {
-  currentRoom = room;
-  roomHistory = [];
-  socket.emit("join", {name:myName,room});
-  $("roomTitle").textContent = "# " + room;
-  $("roomListPage").classList.add("hidden");
-  $("roomChatPage").classList.remove("hidden");
+function endCall(send=true){
+ if(send&&activeDm&&activeTarget)signal({kind:"reject"});
+ if(pc){pc.onconnectionstatechange=null;pc.close();pc=null}
+ if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null}
+ $("remoteVideo").srcObject=null;$("localVideo").srcObject=null;
+ $("callbox").classList.add("hidden");$("acceptCall").classList.add("hidden");
+ pendingOffer=null;candidateQueue=[];
 }
-
-["general","gaming","basket","musique","random"].forEach(room => {
-  const button = document.createElement("button");
-  button.className = "list-item";
-  button.innerHTML = `<div class="avatar">#</div><div class="grow"><b>${room}</b><div class="muted small">Salon de discussion</div></div><span>›</span>`;
-  button.onclick = () => showRoom(room);
-  $("roomChoices").appendChild(button);
-});
-
-$("joinCustom").onclick = () => {
-  const room = $("newRoom").value.trim().replace(/[^a-zA-Z0-9_-]/g,"").slice(0,32);
-  if (room) {
-    showRoom(room);
-    $("newRoom").value = "";
-  }
-};
-
-function sendFile(file, privateMode) {
-  if (!file) return;
-  if (file.size > 2800000) {
-    alert("Fichier trop lourd : choisis un fichier de moins de 2,8 Mo.");
-    return;
-  }
-
-  const type = file.type.startsWith("image/") ? "image"
-    : file.type.startsWith("video/") ? "video" : null;
-
-  if (!type) {
-    alert("Choisis une image ou une vidéo.");
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    if (privateMode && activeDm) {
-      socket.emit("send-dm-message",{id:activeDm,type,content:reader.result});
-    } else if (!privateMode) {
-      socket.emit("send-room-message",{type,content:reader.result});
-    }
-  };
-  reader.readAsDataURL(file);
-}
-
-$("dmFile").onchange = e => {
-  sendFile(e.target.files[0],true);
-  e.target.value = "";
-};
-$("roomFile").onchange = e => {
-  sendFile(e.target.files[0],false);
-  e.target.value = "";
-};
-
-async function toggleVoice(privateMode) {
-  if (mediaRecorder && mediaRecorder.state === "recording") {
-    mediaRecorder.stop();
-    return;
-  }
-
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-    const recorder = new MediaRecorder(stream);
-    mediaRecorder = recorder;
-    const chunks = [];
-
-    recorder.ondataavailable = e => {
-      if (e.data.size) chunks.push(e.data);
-    };
-
-    recorder.onstop = () => {
-      const blob = new Blob(chunks,{type:recorder.mimeType || "audio/webm"});
-      const reader = new FileReader();
-
-      reader.onload = () => {
-        if (blob.size > 2800000) {
-          alert("Vocal trop lourd.");
-        } else if (privateMode && activeDm) {
-          socket.emit("send-dm-message",{id:activeDm,type:"audio",content:reader.result});
-        } else if (!privateMode) {
-          socket.emit("send-room-message",{type:"audio",content:reader.result});
-        }
-
-        stream.getTracks().forEach(track => track.stop()
-
-
+$("hangup").onclick=()=>endCall(true);
+</script>
+</body>
+  </html>
