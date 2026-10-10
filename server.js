@@ -1,5 +1,4 @@
 
-
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -9,148 +8,218 @@ const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  maxHttpBufferSize: 1e6
+  maxHttpBufferSize: 1e6,
+  cors: { origin: "*" }
 });
+
+const PORT = process.env.PORT || 3000;
+const MAX_MEDIA_LENGTH = 750_000;
+const MAX_TEXT_LENGTH = 2000;
 
 app.use(express.static(path.join(__dirname, "public")));
 
-const rooms = new Map();
-const MAX_HISTORY = 30;
-const MAX_TEXT_LENGTH = 500;
-const MAX_MEDIA_LENGTH = 750000;
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", app: "NiM V4" });
+});
 
-function getRoomHistory(room) {
-  if (!rooms.has(room)) {
-    rooms.set(room, []);
-  }
-  return rooms.get(room);
+// Messages gardés en mémoire : ils disparaissent si le serveur redémarre.
+const histories = new Map();
+
+// Suivi des appels audio en cours.
+const voiceRooms = new Map();
+const voiceSocketRooms = new Map();
+const socketInfo = new Map();
+
+function clean(value, maxLength = 40) {
+  return String(value || "")
+    .trim()
+    .replace(/[<>]/g, "")
+    .slice(0, maxLength);
 }
 
-function addMessage(room, message) {
-  const history = getRoomHistory(room);
-  history.push(message);
-
-  while (history.length > MAX_HISTORY) {
-    history.shift();
-  }
-
-  io.to(room).emit("chat-message", message);
+function validRoom(room) {
+  return /^[a-zA-Z0-9_-]{1,40}$/.test(room);
 }
 
-function validMediaData(data, type) {
-  if (typeof data !== "string" || data.length > MAX_MEDIA_LENGTH) {
-    return false;
-  }
+function validDataUrl(data, type) {
+  if (typeof data !== "string") return false;
+  if (data.length > MAX_MEDIA_LENGTH) return false;
 
   if (type === "image") {
-    return /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=\r\n]+$/.test(data);
+    return /^data:image\/(jpeg|jpg|png|webp);base64,/i.test(data);
   }
 
   if (type === "audio") {
-    return /^data:audio\/[a-z0-9.+-]+(?:;codecs=[a-z0-9.,-]+)?;base64,[A-Za-z0-9+/=\r\n]+$/i.test(data);
+    return /^data:audio\/[a-z0-9.+-]+(?:;[^,]*)?;base64,/i.test(data);
   }
 
   return false;
 }
 
-io.on("connection", (socket) => {
-  socket.on("join-room", (data = {}) => {
-    const name = String(data.name || "").trim().slice(0, 24);
-    const room = String(data.room || "").trim().slice(0, 32);
+function systemMessage(room, text) {
+  const msg = {
+    id: `${Date.now()}-${Math.random()}`,
+    type: "system",
+    text,
+    time: Date.now()
+  };
 
-    if (!name || !room) {
-      socket.emit("error-message", "Entre un pseudo et un nom de salon.");
+  io.to(room).emit("new-message", msg);
+}
+
+function leaveVoice(socket) {
+  const room = voiceSocketRooms.get(socket.id);
+  if (!room) return;
+
+  const members = voiceRooms.get(room);
+  if (members) {
+    members.delete(socket.id);
+    if (members.size === 0) voiceRooms.delete(room);
+  }
+
+  voiceSocketRooms.delete(socket.id);
+  socket.leave(`voice:${room}`);
+  socket.to(`voice:${room}`).emit("voice-peer-left", socket.id);
+}
+
+io.on("connection", (socket) => {
+  socket.on("join-room", (payload = {}) => {
+    const name = clean(payload.name, 24);
+    const room = clean(payload.room, 40);
+
+    if (!name || !validRoom(room)) {
+      socket.emit("join-error", "Entre un pseudo et un salon valide.");
       return;
     }
 
-    if (socket.data.room) {
-      socket.leave(socket.data.room);
+    const oldInfo = socketInfo.get(socket.id);
+    if (oldInfo && oldInfo.room === room && oldInfo.name === name) {
+      socket.emit("joined", { name, room });
+      socket.emit("history", histories.get(room) || []);
+      return;
     }
 
-    socket.data.name = name;
-    socket.data.room = room;
+    if (oldInfo) {
+      leaveVoice(socket);
+      socket.leave(oldInfo.room);
+    }
 
+    socketInfo.set(socket.id, { name, room });
     socket.join(room);
 
-    socket.emit("history", getRoomHistory(room));
+    if (!histories.has(room)) histories.set(room, []);
+    socket.emit("history", histories.get(room));
     socket.emit("joined", { name, room });
 
-    addMessage(room, {
-      type: "system",
-      text: `${name} a rejoint le salon`,
-      time: new Date().toISOString()
-    });
+    systemMessage(room, `${name} a rejoint le salon.`);
   });
 
-  socket.on("send-message", (data = {}) => {
-    const name = socket.data.name;
-    const room = socket.data.room;
+  socket.on("send-message", (payload = {}) => {
+    const info = socketInfo.get(socket.id);
+    if (!info) return;
 
-    if (!name || !room || !data || typeof data !== "object") {
-      return;
-    }
+    let msg;
 
-    let message;
-
-    if (data.type === "text") {
-      const text = typeof data.text === "string"
-        ? data.text.trim().slice(0, MAX_TEXT_LENGTH)
-        : "";
-
+    if (payload.type === "text") {
+      const text = String(payload.text || "").trim().slice(0, MAX_TEXT_LENGTH);
       if (!text) return;
 
-      message = {
+      msg = {
+        id: `${Date.now()}-${Math.random()}`,
         type: "text",
         text,
-        name,
-        time: new Date().toISOString()
+        name: info.name,
+        time: Date.now()
       };
-    } else if (data.type === "image") {
-      if (!validMediaData(data.image, "image")) {
-        socket.emit("error-message", "Image invalide ou trop volumineuse.");
-        return;
-      }
-
-      message = {
+    } else if (
+      payload.type === "image" &&
+      validDataUrl(payload.image, "image")
+    ) {
+      msg = {
+        id: `${Date.now()}-${Math.random()}`,
         type: "image",
-        image: data.image,
-        name,
-        time: new Date().toISOString()
+        image: payload.image,
+        name: info.name,
+        time: Date.now()
       };
-    } else if (data.type === "audio") {
-      if (!validMediaData(data.audio, "audio")) {
-        socket.emit("error-message", "Vocal invalide ou trop volumineux. Essaie un enregistrement plus court.");
-        return;
-      }
-
-      message = {
+    } else if (
+      payload.type === "audio" &&
+      validDataUrl(payload.audio, "audio")
+    ) {
+      msg = {
+        id: `${Date.now()}-${Math.random()}`,
         type: "audio",
-        audio: data.audio,
-        name,
-        time: new Date().toISOString()
+        audio: payload.audio,
+        name: info.name,
+        time: Date.now()
       };
     } else {
       return;
     }
 
-    addMessage(room, message);
+    const history = histories.get(info.room) || [];
+    history.push(msg);
+    while (history.length > 30) history.shift();
+    histories.set(info.room, history);
+
+    io.to(info.room).emit("new-message", msg);
+  });
+
+  // Rejoindre l'appel audio du salon.
+  socket.on("voice-join", () => {
+    const info = socketInfo.get(socket.id);
+    if (!info) return;
+
+    leaveVoice(socket);
+
+    const room = info.room;
+    if (!voiceRooms.has(room)) voiceRooms.set(room, new Set());
+
+    const members = voiceRooms.get(room);
+    const peers = [...members];
+
+    members.add(socket.id);
+    voiceSocketRooms.set(socket.id, room);
+    socket.join(`voice:${room}`);
+
+    socket.emit("voice-peers", peers);
+    socket.to(`voice:${room}`).emit("voice-peer-joined", socket.id);
+  });
+
+  // Relais des offres, réponses et candidats WebRTC.
+  socket.on("voice-signal", (payload = {}) => {
+    const room = voiceSocketRooms.get(socket.id);
+    if (!room || !payload.to) return;
+
+    const targetRoom = voiceSocketRooms.get(payload.to);
+    if (targetRoom !== room) return;
+
+    socket.to(payload.to).emit("voice-signal", {
+      from: socket.id,
+      signal: payload.signal
+    });
+  });
+
+  socket.on("voice-leave", () => {
+    leaveVoice(socket);
   });
 
   socket.on("disconnect", () => {
-    const { name, room } = socket.data;
+    leaveVoice(socket);
 
-    if (name && room) {
-      addMessage(room, {
-        type: "system",
-        text: `${name} a quitté le salon`,
-        time: new Date().toISOString()
+    const info = socketInfo.get(socket.id);
+    if (info) {
+      socket.to(info.room).emit("member-left", {
+        name: info.name
       });
     }
+
+    socketInfo.delete(socket.id);
   });
 });
 
-const PORT = process.env.PORT || 3000;
-
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`NiM Chat écoute sur le port ${PORT}`);
+  console.log(`NiM V4 démarré sur le port ${PORT}`);
 });
+  
+
