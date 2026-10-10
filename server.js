@@ -1,284 +1,208 @@
-
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  maxHttpBufferSize: 5e6
-});
+const io = new Server(server, { maxHttpBufferSize: 5e6 });
 
 app.use(express.static("public"));
 
 app.get("/health", (req, res) => {
-  res.json({ status: "ok", app: "NiM V7" });
+  res.json({ status: "ok", app: "NiM" });
 });
 
 const users = new Map();
-const roomHistory = new Map();
-const privateChats = new Map();
-const userChats = new Map();
+const rooms = new Map();
+const chats = new Map();
 
-function makeId() {
+function id() {
   return Math.random().toString(36).slice(2, 10)
     + Date.now().toString(36);
 }
 
-function cleanName(value) {
+function clean(value, max = 30) {
   return String(value || "")
     .trim()
     .replace(/[<>]/g, "")
-    .slice(0, 20);
+    .slice(0, max);
 }
 
-function cleanRoom(value) {
-  return String(value || "general")
-    .trim()
-    .replace(/[^a-zA-Z0-9_-]/g, "")
-    .slice(0, 32) || "general";
+function sendUsers(room) {
+  io.to(room).emit(
+    "users",
+    [...users.entries()]
+      .filter(([, u]) => u.room === room)
+      .map(([socketId, u]) => ({
+        id: socketId,
+        name: u.name
+      }))
+  );
 }
 
-function addHistory(list, message) {
-  list.push(message);
-  if (list.length > 50) list.shift();
+function roomHistory(room) {
+  if (!rooms.has(room)) rooms.set(room, []);
+  return rooms.get(room);
 }
 
-function onlineUsers(room) {
-  return [...users.entries()]
-    .filter(([id, user]) => user.room === room)
-    .map(([id, user]) => ({
-      id,
-      name: user.name
-    }));
-}
-
-function updateUsers(room) {
-  io.to(room).emit("room-users", onlineUsers(room));
-}
-
-function sendChatList(socketId) {
-  const ids = userChats.get(socketId) || new Set();
-
-  const chats = [...ids]
-    .map(id => {
-      const chat = privateChats.get(id);
-      if (!chat) return null;
-
-      const index = chat.members.findIndex(
-        member => member !== socketId
-      );
-
+function chatList(socketId) {
+  return [...chats.values()]
+    .filter(c => c.members.includes(socketId))
+    .map(c => {
+      const other = c.members.find(x => x !== socketId);
       return {
-        id,
-        name: chat.names[index < 0 ? 0 : index],
-        history: chat.history
+        id: c.id,
+        name: c.names[other],
+        target: other,
+        history: c.history
       };
-    })
-    .filter(Boolean);
-
-  io.to(socketId).emit("dm-list", chats);
+    });
 }
 
-function leaveRoom(socket) {
-  const user = users.get(socket.id);
-  if (!user) return;
-
-  socket.leave(user.room);
-  users.delete(socket.id);
-  updateUsers(user.room);
+function sendChatLists(chat) {
+  chat.members.forEach(member => {
+    io.to(member).emit("dm-list", chatList(member));
+  });
 }
 
-function validMessage(data) {
-  const type = ["text", "image", "video", "audio"]
-    .includes(data?.type) ? data.type : "text";
-
+function validateMessage(data) {
+  const type = data?.type;
   const content = String(data?.content || "");
 
+  if (!["text", "image", "audio"].includes(type)) return null;
   if (!content) return null;
-  if (type === "text" && content.length > 2000) return null;
-  if (type !== "text" && content.length > 4000000) return null;
 
-  if (
-    type !== "text" &&
-    !new RegExp("^data:" + type + "/").test(content)
-  ) return null;
+  if (type === "text" && content.length > 2000) return null;
+  if (type !== "text" && content.length > 3800000) return null;
+
+  if (type === "image" && !content.startsWith("data:image/")) return null;
+  if (type === "audio" && !content.startsWith("data:audio/")) return null;
 
   return { type, content };
 }
 
+function addMessage(list, message) {
+  list.push(message);
+  if (list.length > 50) list.shift();
+}
+
 io.on("connection", socket => {
   socket.on("join", data => {
-    const name = cleanName(data?.name);
-    const room = cleanRoom(data?.room);
+    const name = clean(data?.name, 20);
+    const room = clean(data?.room || "general", 30)
+      .replace(/[^a-zA-Z0-9_-]/g, "") || "general";
 
     if (!name) {
       socket.emit("error-message", "Choisis un pseudo.");
       return;
     }
 
-    leaveRoom(socket);
+    const previous = users.get(socket.id);
+    if (previous) {
+      socket.leave(previous.room);
+      sendUsers(previous.room);
+    }
 
     users.set(socket.id, { name, room });
     socket.join(room);
 
-    if (!userChats.has(socket.id)) {
-      userChats.set(socket.id, new Set());
-    }
-
     socket.emit("joined", {
       name,
       room,
-      history: roomHistory.get(room) || []
+      history: roomHistory(room)
     });
 
-    updateUsers(room);
-    sendChatList(socket.id);
+    sendUsers(room);
+    socket.emit("dm-list", chatList(socket.id));
   });
 
-  socket.on("send-room-message", data => {
+  socket.on("room-message", data => {
     const user = users.get(socket.id);
-    const message = validMessage(data);
+    const message = validateMessage(data);
     if (!user || !message) return;
 
     const msg = {
-      id: makeId(),
+      ...message,
+      id: id(),
       sender: user.name,
       senderId: socket.id,
-      ...message,
       time: Date.now()
     };
 
-    const history = roomHistory.get(user.room) || [];
-    addHistory(history, msg);
-    roomHistory.set(user.room, history);
-
+    addMessage(roomHistory(user.room), msg);
     io.to(user.room).emit("room-message", msg);
   });
 
-  socket.on("start-dm", targetId => {
-    const otherId = String(targetId || "");
-    const me = users.get(socket.id);
-    const other = users.get(otherId);
+  socket.on("start-dm", target => {
+    if (!users.has(socket.id) || !users.has(target) || target === socket.id) return;
 
-    if (!me || !other || socket.id === otherId) return;
+    let chat = [...chats.values()].find(c =>
+      c.members.includes(socket.id) && c.members.includes(target)
+    );
 
-    // Reprendre la conversation si elle existe déjà.
-    for (const [id, chat] of privateChats) {
-      if (
-        chat.members.includes(socket.id) &&
-        chat.members.includes(otherId)
-      ) {
-        socket.join(id);
-        socket.emit("dm-opened", {
-          id,
-          name: other.name,
-          history: chat.history
-        });
-        return;
-      }
+    if (!chat) {
+      chat = {
+        id: id(),
+        members: [socket.id, target],
+        names: {
+          [socket.id]: users.get(socket.id).name,
+          [target]: users.get(target).name
+        },
+        history: []
+      };
+      chats.set(chat.id, chat);
     }
 
-    const id = "dm_" + makeId();
-
-    privateChats.set(id, {
-      members: [socket.id, otherId],
-      names: [me.name, other.name],
-      history: []
+    socket.emit("dm-open", {
+      id: chat.id,
+      name: chat.names[target],
+      target,
+      history: chat.history
     });
 
-    userChats.get(socket.id).add(id);
-
-    if (!userChats.has(otherId)) {
-      userChats.set(otherId, new Set());
-    }
-    userChats.get(otherId).add(id);
-
-    socket.join(id);
-    io.sockets.sockets.get(otherId)?.join(id);
-
-    socket.emit("dm-opened", {
-      id,
-      name: other.name,
-      history: []
+    io.to(target).emit("dm-available", {
+      id: chat.id,
+      name: chat.names[socket.id],
+      target: socket.id,
+      history: chat.history
     });
 
-    io.to(otherId).emit("dm-available", {
-      id,
-      name: me.name,
-      history: []
-    });
-
-    sendChatList(socket.id);
-    sendChatList(otherId);
+    sendChatLists(chat);
   });
 
-  socket.on("send-dm-message", data => {
-    const id = String(data?.id || "");
-    const chat = privateChats.get(id);
+  socket.on("dm-message", data => {
+    const chat = chats.get(data?.id);
+    const message = validateMessage(data);
     const user = users.get(socket.id);
-    const message = validMessage(data);
 
-    if (
-      !chat ||
-      !user ||
-      !message ||
-      !chat.members.includes(socket.id)
-    ) return;
+    if (!chat || !message || !user ||
+        !chat.members.includes(socket.id)) return;
 
     const msg = {
-      id: makeId(),
+      ...message,
+      id: id(),
       sender: user.name,
       senderId: socket.id,
-      ...message,
-      time: Date.now(),
-      status: "Envoyé"
+      time: Date.now()
     };
 
-    addHistory(chat.history, msg);
-    io.to(id).emit("dm-message", { id, msg });
+    addMessage(chat.history, msg);
+    chat.members.forEach(member => {
+      io.to(member).emit("dm-message", {
+        id: chat.id,
+        msg
+      });
+    });
 
-    for (const member of chat.members) {
-      if (member !== socket.id) {
-        io.to(member).emit("dm-message-status", {
-          id,
-          messageId: msg.id,
-          status: "Reçu"
-        });
-      }
-    }
+    sendChatLists(chat);
   });
 
-  socket.on("dm-read", data => {
-    const id = String(data?.id || "");
-    const chat = privateChats.get(id);
-
-    if (!chat || !chat.members.includes(socket.id)) return;
-
-    for (const msg of chat.history) {
-      if (msg.senderId !== socket.id) {
-        msg.status = "Lu";
-        io.to(msg.senderId).emit("dm-message-status", {
-          id,
-          messageId: msg.id,
-          status: "Lu"
-        });
-      }
-    }
-  });
-
-  // Signalisation des appels audio et vidéo privés.
   socket.on("call-signal", data => {
-    const id = String(data?.dmId || "");
-    const target = String(data?.target || "");
-    const chat = privateChats.get(id);
+    const chat = chats.get(data?.id);
+    const target = data?.target;
 
-    if (
-      !chat ||
-      !chat.members.includes(socket.id) ||
-      !chat.members.includes(target) ||
-      !data?.kind
-    ) return;
+    if (!chat || !chat.members.includes(socket.id) ||
+        !chat.members.includes(target)) return;
 
     io.to(target).emit("call-signal", {
       ...data,
@@ -287,44 +211,32 @@ io.on("connection", socket => {
     });
   });
 
-  socket.on("leave-room", () => leaveRoom(socket));
-
   socket.on("disconnect", () => {
     const user = users.get(socket.id);
-
     if (user) {
       users.delete(socket.id);
-      updateUsers(user.room);
+      sendUsers(user.room);
     }
 
-    userChats.delete(socket.id);
-
-    for (const [id, chat] of privateChats) {
+    for (const [key, chat] of chats) {
       if (!chat.members.includes(socket.id)) continue;
 
-      for (const member of chat.members) {
-        if (member === socket.id) continue;
+      chat.members.forEach(member => {
+        if (member !== socket.id) {
+          io.to(member).emit("dm-ended", { id: key });
+        }
+      });
 
-        userChats.get(member)?.delete(id);
-
-        io.to(member).emit("dm-ended", {
-          id,
-          message: "Contact déconnecté."
-        });
-
-        sendChatList(member);
-      }
-
-      privateChats.delete(id);
+      chats.delete(key);
     }
   });
 });
 
 const PORT = process.env.PORT || 3000;
-
 server.listen(PORT, "0.0.0.0", () => {
-  console.log("NiM V7 lancé sur le port " + PORT);
+  console.log("NiM lancé sur le port " + PORT);
 });
+
   
 
           
