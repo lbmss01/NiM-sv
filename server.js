@@ -1,88 +1,149 @@
 
+
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
+const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
+
 const io = new Server(server, {
   maxHttpBufferSize: 1e6
 });
 
-app.use(express.static("public"));
-
-app.get("/health", (req, res) => {
-  res.send("NiM Chat fonctionne !");
-});
+app.use(express.static(path.join(__dirname, "public")));
 
 const rooms = new Map();
+const MAX_HISTORY = 30;
+const MAX_TEXT_LENGTH = 500;
+const MAX_MEDIA_LENGTH = 750000;
+
+function getRoomHistory(room) {
+  if (!rooms.has(room)) {
+    rooms.set(room, []);
+  }
+  return rooms.get(room);
+}
+
+function addMessage(room, message) {
+  const history = getRoomHistory(room);
+  history.push(message);
+
+  while (history.length > MAX_HISTORY) {
+    history.shift();
+  }
+
+  io.to(room).emit("chat-message", message);
+}
+
+function validMediaData(data, type) {
+  if (typeof data !== "string" || data.length > MAX_MEDIA_LENGTH) {
+    return false;
+  }
+
+  if (type === "image") {
+    return /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=\r\n]+$/.test(data);
+  }
+
+  if (type === "audio") {
+    return /^data:audio\/[a-z0-9.+-]+(?:;codecs=[a-z0-9.,-]+)?;base64,[A-Za-z0-9+/=\r\n]+$/i.test(data);
+  }
+
+  return false;
+}
 
 io.on("connection", (socket) => {
-  let currentRoom = "";
-  let currentName = "";
+  socket.on("join-room", (data = {}) => {
+    const name = String(data.name || "").trim().slice(0, 24);
+    const room = String(data.room || "").trim().slice(0, 32);
 
-  socket.on("join-room", (info) => {
-    if (currentRoom) return;
-
-    const name = String(info?.name || "").trim().slice(0, 20);
-    const room = String(info?.room || "").trim().toLowerCase();
-
-    if (!name || !/^[a-z0-9_-]{4,24}$/.test(room)) {
-      socket.emit("error-message", "Pseudo ou code de salon invalide.");
+    if (!name || !room) {
+      socket.emit("error-message", "Entre un pseudo et un nom de salon.");
       return;
     }
 
-    currentName = name;
-    currentRoom = room;
+    if (socket.data.room) {
+      socket.leave(socket.data.room);
+    }
+
+    socket.data.name = name;
+    socket.data.room = room;
+
     socket.join(room);
 
-    if (!rooms.has(room)) rooms.set(room, []);
+    socket.emit("history", getRoomHistory(room));
+    socket.emit("joined", { name, room });
 
-    socket.emit("history", rooms.get(room));
-    socket.emit("joined", name);
-
-    socket.to(room).emit("chat-message", {
+    addMessage(room, {
       type: "system",
-      text: name + " a rejoint le salon."
+      text: `${name} a rejoint le salon`,
+      time: new Date().toISOString()
     });
   });
 
-  socket.on("send-message", (data) => {
-    if (!currentRoom || !data || typeof data !== "object") return;
+  socket.on("send-message", (data = {}) => {
+    const name = socket.data.name;
+    const room = socket.data.room;
+
+    if (!name || !room || !data || typeof data !== "object") {
+      return;
+    }
 
     let message;
 
-    if (data.type === "text" && typeof data.text === "string") {
-      const text = data.text.trim().slice(0, 500);
+    if (data.type === "text") {
+      const text = typeof data.text === "string"
+        ? data.text.trim().slice(0, MAX_TEXT_LENGTH)
+        : "";
+
       if (!text) return;
 
-      message = { type: "text", text };
-    } else if (
-      data.type === "image" &&
-      typeof data.image === "string" &&
-      /^data:image\/(jpeg|png|webp);base64,/.test(data.image) &&
-      data.image.length <= 800000
-    ) {
-      message = { type: "image", image: data.image };
+      message = {
+        type: "text",
+        text,
+        name,
+        time: new Date().toISOString()
+      };
+    } else if (data.type === "image") {
+      if (!validMediaData(data.image, "image")) {
+        socket.emit("error-message", "Image invalide ou trop volumineuse.");
+        return;
+      }
+
+      message = {
+        type: "image",
+        image: data.image,
+        name,
+        time: new Date().toISOString()
+      };
+    } else if (data.type === "audio") {
+      if (!validMediaData(data.audio, "audio")) {
+        socket.emit("error-message", "Vocal invalide ou trop volumineux. Essaie un enregistrement plus court.");
+        return;
+      }
+
+      message = {
+        type: "audio",
+        audio: data.audio,
+        name,
+        time: new Date().toISOString()
+      };
     } else {
       return;
     }
 
-    message.name = currentName;
-    message.time = new Date().toISOString();
-
-    const history = rooms.get(currentRoom);
-    history.push(message);
-    if (history.length > 30) history.shift();
-
-    io.to(currentRoom).emit("chat-message", message);
+    addMessage(room, message);
   });
 
   socket.on("disconnect", () => {
-    if (currentRoom) {
-      socket.to(currentRoom).emit("chat-message", {
+    const { name, room } = socket.data;
+
+    if (name && room) {
+      addMessage(room, {
         type: "system",
-        text: currentName + " s'est déconnecté."
+        text: `${name} a quitté le salon`,
+        time: new Date().toISOString()
       });
     }
   });
@@ -91,5 +152,5 @@ io.on("connection", (socket) => {
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log("NiM Chat lancé sur le port " + PORT);
+  console.log(`NiM Chat écoute sur le port ${PORT}`);
 });
