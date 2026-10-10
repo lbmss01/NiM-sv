@@ -1,369 +1,511 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#100b18">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NiM — Next is Me</title>
 <script src="/socket.io/socket.io.js"></script>
 <style>
-:root{--bg:#100b18;--panel:#1b1225;--line:#392747;--pink:#ff67cf;--violet:#a66bff;--text:#fff7ff;--muted:#b9a9c7}
 *{box-sizing:border-box}
-body{margin:0;background:radial-gradient(ellipse at top,#301342,var(--bg) 55%);color:var(--text);font:15px system-ui,sans-serif;min-height:100dvh}
-button,input{font:inherit}
-button{cursor:pointer;border:0;border-radius:13px;padding:11px 14px;color:white;background:linear-gradient(120deg,#8244d9,#c541a8);font-weight:700}
-input{min-width:0;width:100%;background:#100b18;border:1px solid var(--line);border-radius:13px;padding:12px;color:white}
+body{margin:0;background:#0c0913;color:#fff;font-family:Arial,sans-serif}
+header{padding:18px;background:#171020;border-bottom:1px solid #382047}
+.logo{font-size:28px;font-weight:bold;background:linear-gradient(90deg,#a855f7,#f472b6);color:transparent;background-clip:text}
+main{max-width:950px;margin:auto;padding:16px}
+.panel{background:#171020;border:1px solid #352044;border-radius:16px;padding:15px;margin-bottom:14px}
+input,button{font-size:15px;border-radius:10px;padding:11px;border:1px solid #493058}
+input{background:#0f0b16;color:white;min-width:0}
+button{background:#8b35d1;color:white;cursor:pointer;border:0;margin:3px}
+button:hover{filter:brightness(1.15)}
+.row{display:flex;gap:7px;flex-wrap:wrap}
+.row input{flex:1}
+#messages{height:280px;overflow:auto;display:flex;flex-direction:column;gap:9px}
+.msg{background:#261831;border-radius:12px;padding:10px;overflow-wrap:anywhere}
+.msg small{color:#d6a9f7}
+.msg img{max-width:100%;max-height:250px;border-radius:10px;display:block}
+audio,video{max-width:100%;width:100%}
+#people button,#dmList button{background:#30203d}
+#callArea{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px}
+.videoTile{background:#08060c;border-radius:12px;padding:5px;min-width:0}
+.videoTile video{height:150px;object-fit:cover}
 .hidden{display:none!important}
-.app{max-width:720px;margin:auto;min-height:100dvh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom)}
-header{display:flex;align-items:center;justify-content:space-between;padding:16px 4px}
-.logo{font-size:29px;font-weight:950;letter-spacing:-1px;background:linear-gradient(90deg,#fff,#d5a1ff,#ff70ce);color:transparent;background-clip:text}
-.muted{color:var(--muted)}.small{font-size:12px}
-.panel{background:#1b1225ed;border:1px solid var(--line);border-radius:22px;padding:15px}
-.stack{display:flex;flex-direction:column;gap:11px}
-.title{font-size:21px;font-weight:850;margin:3px 0 12px}
-.pill{font-size:11px;padding:5px 9px;border-radius:30px;background:#382447}
-.tabs{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:10px 0;position:sticky;bottom:0;background:#100b18f5;z-index:3}
-.tab{background:#24182e;border:1px solid var(--line);color:#cbbbd7}
-.tab.active{background:linear-gradient(120deg,#773cc2,#b83b9d);color:white}
-.list-item{width:100%;display:flex;align-items:center;gap:11px;text-align:left;background:#24182e;border:1px solid #402c50;border-radius:16px;padding:12px;color:white;margin:0 0 8px}
-.avatar{width:43px;height:43px;flex-shrink:0;border-radius:15px;display:grid;place-items:center;font-weight:900;background:linear-gradient(145deg,#7438b7,#ed5ab9)}
-.grow{flex:1}.online{color:#6ce9a0}
-.chathead{display:flex;align-items:center;gap:8px;margin-bottom:12px}
-.secondary,.iconbtn{background:#2b2037;border:1px solid var(--line)}
-.messages{height:min(52dvh,470px);min-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:9px;padding:8px 1px 14px}
-.bubble-row{max-width:84%;align-self:flex-start;display:flex;flex-direction:column}
-.bubble-row.mine{align-self:flex-end;align-items:flex-end}
-.bname{font-size:11px;color:var(--muted);margin:0 8px 3px}
-.bubble{padding:10px 13px;border-radius:17px 17px 17px 5px;background:#3b2b4c;overflow-wrap:anywhere;white-space:pre-wrap}
-.mine .bubble{background:linear-gradient(135deg,#783cba,#a23b9e);border-radius:17px 17px 5px 17px}
-.bubble img{display:block;max-width:100%;max-height:260px;border-radius:10px}
-.bubble audio{max-width:220px}
-.meta{font-size:10px;color:#cbb9d8;margin:4px 7px 0}
-.compose{display:flex;gap:7px;align-items:center;margin-top:10px}
-.compose input{flex:1}
-.filelabel{background:#2b2037;border:1px solid var(--line);border-radius:13px;padding:10px;cursor:pointer}
-.filelabel input{display:none}
-.empty{text-align:center;padding:24px 8px;color:var(--muted)}
-.notice{font-size:12px;color:#d8bce9;line-height:1.5}
-#callbox{position:fixed;inset:0;z-index:10;background:#09060df7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px}
-#remoteVideo{width:min(92vw,540px);max-height:55dvh;background:#24182e;border-radius:20px}
-#localVideo{width:110px;position:absolute;right:18px;top:65px}
+h2{font-size:19px}
+.muted{color:#bca9c8;font-size:13px}
 </style>
 </head>
 <body>
-<div class="app">
-<header>
- <div><div class="logo">NiM<span style="color:#ff70ce">.</span></div><div class="muted small">NEXT IS ME</div></div>
- <span class="pill" id="status">Connexion…</span>
-</header>
-
-<section id="login" class="panel stack">
- <div class="title">Bienvenue sur NiM 💜</div>
- <div class="muted">Choisis ton pseudo pour commencer.</div>
- <input id="pseudo" maxlength="20" placeholder="Ton pseudo">
- <button id="enter">Entrer sur NiM</button>
- <div class="notice">Les messages sont temporaires. N'envoie pas d'informations personnelles.</div>
+<header><div class="logo">NiM ⚡</div><div class="muted">Next is Me · Discute avec tes amis</div></header>
+<main>
+<section class="panel" id="login">
+<h2>Bienvenue sur NiM</h2>
+<div class="row">
+<input id="pseudo" maxlength="20" placeholder="Ton pseudo">
+<input id="roomName" maxlength="30" placeholder="Nom du salon (ex. gaming)" value="general">
+<button id="joinBtn">Rejoindre</button>
+</div>
+<p class="muted">Entre un pseudo et le nom du salon que tu veux rejoindre ou créer.</p>
 </section>
 
-<main id="inside" class="hidden">
- <section id="salonsPage" class="panel">
-  <div id="roomList">
-   <div class="title">Salons 👥</div>
-   <div id="roomChoices"></div>
-   <div class="compose"><input id="newRoom" placeholder="Créer ou rejoindre un salon"><button id="joinRoom">Go</button></div>
-  </div>
-  <div id="roomChat" class="hidden">
-   <div class="chathead"><button class="secondary" id="backRoom">←</button><div class="grow"><b id="roomTitle"></b><div id="roomPeople" class="muted small"></div></div></div>
-   <div id="roomMessages" class="messages"></div>
-   <div class="compose">
-    <label class="filelabel">📷<input id="roomPhoto" type="file" accept="image/*"></label>
-    <button class="iconbtn" id="roomVoice">🎙️</button>
-    <input id="roomText" placeholder="Message au salon…">
-    <button id="roomSend">➤</button>
-   </div>
-  </div>
- </section>
+<section id="app" class="hidden">
+<div class="panel">
+<h2 id="roomTitle">Salon</h2>
+<div class="row">
+<input id="changeRoom" maxlength="30" placeholder="Créer / rejoindre un autre salon">
+<button id="changeRoomBtn">Changer de salon</button>
+</div>
+<p class="muted">Les personnes qui entrent dans le même salon peuvent discuter ensemble.</p>
+</div>
 
- <section id="messagesPage" class="panel hidden">
-  <div id="dmListPage">
-   <div class="title">Messages privés 💬</div>
-   <div class="muted small">Les personnes en ligne dans ton salon :</div>
-   <div id="people"></div><div id="dmList"></div>
-  </div>
-  <div id="dmChat" class="hidden">
-   <div class="chathead">
-    <button class="secondary" id="backDm">←</button>
-    <div class="avatar">💬</div>
-    <div class="grow"><b id="dmTitle"></b><div class="muted small">Conversation privée</div></div>
-    <button class="iconbtn" id="audioCall">☎</button>
-    <button class="iconbtn" id="videoCall">▣</button>
-   </div>
-   <div id="dmMessages" class="messages"></div>
-   <div class="compose">
-    <label class="filelabel">📷<input id="dmPhoto" type="file" accept="image/*"></label>
-    <button class="iconbtn" id="dmVoice">🎙️</button>
-    <input id="dmText" placeholder="Message privé…">
-    <button id="dmSend">➤</button>
-   </div>
-   <div class="muted small">Vocal limité à 15 secondes.</div>
-  </div>
- </section>
+<div class="panel">
+<h2>Appel du salon</h2>
+<p class="muted">Lance un appel audio ou vidéo avec les personnes du salon actuel.</p>
+<button id="groupAudio">📞 Appel audio de groupe</button>
+<button id="groupVideo">🎥 Appel vidéo de groupe</button>
+<button id="groupLeave" class="hidden">Quitter l'appel</button>
+<div id="callArea"></div>
+</div>
+
+<div class="panel">
+<h2>Messages du salon</h2>
+<div id="messages"></div>
+<div class="row" style="margin-top:10px">
+<input id="message" maxlength="2000" placeholder="Écris un message...">
+<button id="send">Envoyer</button>
+</div>
+<div class="row">
+<label><button onclick="document.getElementById('photo').click()">📷 Photo</button></label>
+<input id="photo" type="file" accept="image/*" class="hidden">
+<button id="record">🎙️ Enregistrer un vocal</button>
+<span id="recordStatus" class="muted"></span>
+</div>
+</div>
+
+<div class="panel">
+<h2>Membres du salon</h2>
+<p class="muted">Appuie sur un pseudo pour ouvrir une conversation privée.</p>
+<div id="people" class="row"></div>
+</div>
+
+<div class="panel">
+<h2>Messages privés</h2>
+<div id="dmList" class="row"></div>
+</div>
+
+<div class="panel hidden" id="dmPanel">
+<h2 id="dmTitle">Conversation privée</h2>
+<div id="dmMessages"></div>
+<div class="row">
+<input id="dmMessage" maxlength="2000" placeholder="Message privé...">
+<button id="dmSend">Envoyer</button>
+</div>
+<div class="row">
+<button onclick="document.getElementById('dmPhoto').click()">📷 Photo privée</button>
+<input id="dmPhoto" type="file" accept="image/*" class="hidden">
+<button id="dmRecord">🎙️ Vocal privé</button>
+</div>
+<hr>
+<h2>Appel privé</h2>
+<button id="dmAudio">📞 Appel audio</button>
+<button id="dmVideo">🎥 Appel vidéo</button>
+<button id="dmHangup">Raccrocher</button>
+<div id="dmCallArea" class="row"></div>
+</div>
+</section>
 </main>
-
-<nav id="nav" class="tabs hidden">
- <button class="tab active" data-page="salons">👥 Salons</button>
- <button class="tab" data-page="messages">💬 Messages</button>
-</nav>
-</div>
-
-<div id="callbox" class="hidden">
- <div class="title" id="callTitle">Appel NiM</div>
- <div id="callState" class="muted">Connexion…</div>
- <video id="remoteVideo" autoplay playsinline></video>
- <video id="localVideo" autoplay muted playsinline class="hidden"></video>
- <div style="display:flex;gap:12px">
-  <button id="acceptCall" class="hidden">Répondre</button>
-  <button id="hangup" style="background:#d63c62">Raccrocher</button>
- </div>
- <div class="notice">Les appels nécessitent une connexion compatible.</div>
-</div>
 
 <script>
 const socket = io();
 const $ = id => document.getElementById(id);
-let myName="", currentRoom="general", currentPage="salons";
-let users=[], chats=[], roomHistory=[], dmHistory=[];
-let activeDm=null, activeTarget=null, activeName="";
-let recorder=null, pc=null, localStream=null, pendingOffer=null;
-let callKind="audio", candidateQueue=[];
+let currentRoom = "general";
+let myName = "";
+let activeDm = null;
+let activeTarget = null;
+let dmPc = null;
+let dmStream = null;
+let groupStream = null;
+let groupActive = false;
+let groupVideoMode = false;
+const groupPeers = new Map();
+let recorder = null;
+let recordedChunks = [];
+let recordingTarget = "room";
 
-function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function time(t){return new Date(t).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
-
-function page(p){
- currentPage=p;
- $("salonsPage").classList.toggle("hidden",p!=="salons");
- $("messagesPage").classList.toggle("hidden",p!=="messages");
- document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.page===p));
+function escapeText(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
 }
 
-document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>page(b.dataset.page));
-socket.on("connect",()=>{$("status").textContent="Connecté"});
-socket.on("disconnect",()=>{$("status").textContent="Déconnecté"});
-socket.on("error-message",m=>alert(m));
+function joinRoom(room) {
+  room = String(room || "general").trim().replace(/[^a-zA-Z0-9_-]/g,"").slice(0,30);
+  if (!room) room = "general";
+  if (groupActive) leaveGroupCall();
+  currentRoom = room;
+  socket.emit("join", {name:myName, room});
+}
 
-$("enter").onclick=()=>{
- myName=$("pseudo").value.trim();
- if(!myName)return $("pseudo").focus();
- socket.emit("join",{name:myName,room:"general"});
+$("joinBtn").onclick = () => {
+  myName = $("pseudo").value.trim();
+  if (!myName) return alert("Choisis un pseudo.");
+  $("login").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  joinRoom($("roomName").value);
 };
-$("pseudo").onkeydown=e=>{if(e.key==="Enter")$("enter").click()};
+$("changeRoomBtn").onclick = () => joinRoom($("changeRoom").value);
 
-socket.on("joined",data=>{
- myName=data.name;currentRoom=data.room;roomHistory=data.history||[];
- $("login").classList.add("hidden");
- $("inside").classList.remove("hidden");
- $("nav").classList.remove("hidden");
- $("roomTitle").textContent="# "+currentRoom;
- $("roomList").classList.add("hidden");
- $("roomChat").classList.remove("hidden");
- drawRoom();page("salons");
+socket.on("joined", data => {
+  currentRoom = data.room;
+  $("roomTitle").textContent = "Salon : " + data.room;
+  $("changeRoom").value = "";
+  $("messages").innerHTML = "";
+  (data.history || []).forEach(addRoomMessage);
 });
 
-socket.on("users",list=>{users=list||[];drawPeople();drawRoomPeople()});
-socket.on("room-message",msg=>{
- roomHistory.push(msg);if(roomHistory.length>50)roomHistory.shift();drawRoom();
-});
-socket.on("dm-list",list=>{chats=list||[];drawChats()});
-socket.on("dm-open",d=>openDm(d));
-socket.on("dm-available",d=>{if(!chats.some(c=>c.id===d.id))chats.unshift(d);drawChats()});
-socket.on("dm-message",d=>{
- const chat=chats.find(c=>c.id===d.id);
- if(chat){chat.history=chat.history||[];chat.history.push(d.msg);if(chat.history.length>50)chat.history.shift()}
- if(activeDm===d.id){dmHistory.push(d.msg);drawDm()}
- drawChats();
-});
-socket.on("dm-ended",d=>{
- chats=chats.filter(c=>c.id!==d.id);
- if(activeDm===d.id){activeDm=null;$("dmChat").classList.add("hidden");$("dmListPage").classList.remove("hidden")}
- drawChats();
+socket.on("error-message", msg => alert(msg));
+socket.on("users", users => {
+  $("people").innerHTML = "";
+  users.forEach(u => {
+    if (u.id === socket.id) return;
+    const b = document.createElement("button");
+    b.textContent = "@" + u.name;
+    b.onclick = () => socket.emit("start-dm", u.id);
+    $("people").appendChild(b);
+  });
 });
 
-function drawPeople(){
- const box=$("people");box.innerHTML="";
- users.filter(u=>u.id!==socket.id).forEach(u=>{
-  const b=document.createElement("button");b.className="list-item";
-  b.innerHTML=`<div class="avatar">${esc(u.name[0]?.toUpperCase()||"?")}</div><div class="grow"><b>${esc(u.name)}</b><div class="muted small"><span class="online">● En ligne</span></div></div>›`;
-  b.onclick=()=>socket.emit("start-dm",u.id);box.appendChild(b);
- });
- if(!box.children.length)box.innerHTML='<div class="empty">Personne d’autre en ligne dans ce salon.</div>';
+function renderMessage(msg, target) {
+  const el = document.createElement("div");
+  el.className = "msg";
+  const head = document.createElement("small");
+  head.textContent = (msg.sender || "Utilisateur") + " · " +
+    new Date(msg.time || Date.now()).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+  el.appendChild(head);
+  if (msg.type === "text") {
+    const p = document.createElement("div");
+    p.textContent = msg.content;
+    el.appendChild(p);
+  } else if (msg.type === "image") {
+    const img = document.createElement("img");
+    img.src = msg.content;
+    img.alt = "Photo envoyée";
+    el.appendChild(img);
+  } else if (msg.type === "audio") {
+    const audio = document.createElement("audio");
+    audio.controls = true;
+    audio.src = msg.content;
+    el.appendChild(audio);
+  }
+  target.appendChild(el);
+  target.scrollTop = target.scrollHeight;
 }
-function drawChats(){
- const box=$("dmList");box.innerHTML=chats.length?'<div class="title">Conversations</div>':"";
- chats.forEach(c=>{
-  const b=document.createElement("button");b.className="list-item";
-  b.innerHTML=`<div class="avatar">💬</div><div class="grow"><b>${esc(c.name)}</b><div class="muted small">Conversation privée</div></div>›`;
-  b.onclick=()=>openDm(c);box.appendChild(b);
- });
-}
-function openDm(d){
- activeDm=d.id;activeTarget=d.target;activeName=d.name;dmHistory=[...(d.history||[])];
- $("dmTitle").textContent=d.name;
- $("dmListPage").classList.add("hidden");$("dmChat").classList.remove("hidden");drawDm();
-}
-function messageHtml(m){
- const mine=m.senderId===socket.id;
- let body=esc(m.content);
- if(m.type==="image")body=`<img src="${m.content}" alt="Photo envoyée">`;
- if(m.type==="audio")body=`<audio controls src="${m.content}"></audio>`;
- return `<div class="bubble-row ${mine?"mine":""}"><div class="bname">${mine?"Toi":esc(m.sender)}</div><div class="bubble">${body}</div><div class="meta">${time(m.time)}</div></div>`;
-}
-function drawRoom(){$("roomMessages").innerHTML=roomHistory.map(messageHtml).join("");$("roomMessages").scrollTop=$("roomMessages").scrollHeight}
-function drawDm(){$("dmMessages").innerHTML=dmHistory.map(messageHtml).join("");$("dmMessages").scrollTop=$("dmMessages").scrollHeight}
-function drawRoomPeople(){$("roomPeople").textContent=users.map(u=>u.name).join(" · ")}
 
-function showRoom(room){
- currentRoom=room;roomHistory=[];
- $("roomTitle").textContent="# "+room;
- $("roomList").classList.add("hidden");$("roomChat").classList.remove("hidden");
- socket.emit("join",{name:myName,room});
+function addRoomMessage(msg) { renderMessage(msg, $("messages")); }
+socket.on("room-message", addRoomMessage);
+
+function sendRoom(type, content) {
+  socket.emit("room-message", {type, content});
 }
-["general","gaming","basket","musique","random"].forEach(r=>{
- const b=document.createElement("button");b.className="list-item";
- b.innerHTML=`<div class="avatar">#</div><div class="grow"><b>${r}</b><div class="muted small">Salon de discussion</div></div>›`;
- b.onclick=()=>showRoom(r);$("roomChoices").appendChild(b);
-});
-$("joinRoom").onclick=()=>{
- const r=$("newRoom").value.trim().replace(/[^a-zA-Z0-9_-]/g,"").slice(0,30);
- if(r){showRoom(r);$("newRoom").value=""}
+$("send").onclick = () => {
+  const text = $("message").value.trim();
+  if (!text) return;
+  sendRoom("text", text);
+  $("message").value = "";
 };
-$("backRoom").onclick=()=>{$("roomChat").classList.add("hidden");$("roomList").classList.remove("hidden")};
-$("backDm").onclick=()=>{$("dmChat").classList.add("hidden");$("dmListPage").classList.remove("hidden");activeDm=null};
+$("message").addEventListener("keydown", e => {
+  if (e.key === "Enter") $("send").click();
+});
 
-function sendText(isDm){
- const f=$(isDm?"dmText":"roomText"),content=f.value.trim();if(!content)return;
- if(isDm&&activeDm)socket.emit("dm-message",{id:activeDm,type:"text",content});
- if(!isDm)socket.emit("room-message",{type:"text",content});
- f.value="";
+function fileToData(file, maxBytes = 4_000_000) {
+  return new Promise((resolve, reject) => {
+    if (!file) return reject(Error("Aucun fichier choisi."));
+    if (file.size > maxBytes) return reject(Error("Fichier trop volumineux. Choisis un fichier plus léger."));
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(Error("Impossible de lire ce fichier."));
+    reader.readAsDataURL(file);
+  });
 }
-$("dmSend").onclick=()=>sendText(true);
-$("roomSend").onclick=()=>sendText(false);
-$("dmText").onkeydown=e=>{if(e.key==="Enter")sendText(true)};
-$("roomText").onkeydown=e=>{if(e.key==="Enter")sendText(false)};
+$("photo").onchange = async e => {
+  try {
+    const data = await fileToData(e.target.files[0]);
+    sendRoom("image", data);
+  } catch(err) { alert(err.message); }
+  e.target.value = "";
+};
 
-function sendPhoto(file,isDm){
- if(!file)return;
- if(file.size>2500000){alert("Photo trop lourde : choisis moins de 2,5 Mo.");return}
- if(!file.type.startsWith("image/")){alert("Choisis une image.");return}
- const reader=new FileReader();
- reader.onload=()=>{
-  if(isDm&&activeDm)socket.emit("dm-message",{id:activeDm,type:"image",content:reader.result});
-  if(!isDm)socket.emit("room-message",{type:"image",content:reader.result});
- };
- reader.readAsDataURL(file);
+function openDm(d) {
+  activeDm = d.id;
+  activeTarget = d.target;
+  $("dmPanel").classList.remove("hidden");
+  $("dmTitle").textContent = "Privé avec " + d.name;
+  $("dmMessages").innerHTML = "";
+  (d.history || []).forEach(m => renderMessage(m, $("dmMessages")));
 }
-$("dmPhoto").onchange=e=>{sendPhoto(e.target.files[0],true);e.target.value=""};
-$("roomPhoto").onchange=e=>{sendPhoto(e.target.files[0],false);e.target.value=""};
+socket.on("dm-open", openDm);
+socket.on("dm-available", d => {
+  addDmButton(d);
+});
+socket.on("dm-list", list => {
+  $("dmList").innerHTML = "";
+  list.forEach(d => addDmButton(d));
+});
+function addDmButton(d) {
+  const old = [...$("dmList").children].find(b => b.dataset.id === d.id);
+  if (old) return;
+  const b = document.createElement("button");
+  b.dataset.id = d.id;
+  b.textContent = d.name;
+  b.onclick = () => openDm(d);
+  $("dmList").appendChild(b);
+}
+socket.on("dm-message", data => {
+  if (data.id === activeDm) renderMessage(data.msg, $("dmMessages"));
+});
+socket.on("dm-ended", data => {
+  if (data.id === activeDm) {
+    $("dmPanel").classList.add("hidden");
+    activeDm = null;
+    activeTarget = null;
+  }
+});
 
-async function voice(isDm){
- if(recorder&&recorder.state==="recording"){recorder.stop();return}
- try{
-  const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-  const chunks=[];recorder=new MediaRecorder(stream);
-  recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
-  recorder.onstop=()=>{
-   const blob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});
-   const reader=new FileReader();
-   reader.onload=()=>{
-    if(blob.size>2500000){alert("Vocal trop lourd.");return}
-    if(isDm&&activeDm)socket.emit("dm-message",{id:activeDm,type:"audio",content:reader.result});
-    if(!isDm)socket.emit("room-message",{type:"audio",content:reader.result});
-   };
-   reader.readAsDataURL(blob);stream.getTracks().forEach(t=>t.stop());
+$("dmSend").onclick = () => {
+  const text = $("dmMessage").value.trim();
+  if (!text || !activeDm) return;
+  socket.emit("dm-message", {id:activeDm, type:"text", content:text});
+  $("dmMessage").value = "";
+};
+$("dmMessage").addEventListener("keydown", e => {
+  if (e.key === "Enter") $("dmSend").click();
+});
+$("dmPhoto").onchange = async e => {
+  try {
+    if (!activeDm) throw Error("Ouvre d'abord une conversation privée.");
+    const data = await fileToData(e.target.files[0]);
+    socket.emit("dm-message", {id:activeDm, type:"image", content:data});
+  } catch(err) { alert(err.message); }
+  e.target.value = "";
+});
+
+async function startRecording(target) {
+  if (recorder && recorder.state === "recording") {
+    recorder.stop();
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    recordedChunks = [];
+    recordingTarget = target;
+    recorder = new MediaRecorder(stream);
+    recorder.ondataavailable = e => {
+      if (e.data.size) recordedChunks.push(e.data);
+    };
+    recorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      const blob = new Blob(recordedChunks, {type:recorder.mimeType || "audio/webm"});
+      if (blob.size > 4_000_000) {
+        alert("Vocal trop long. Enregistre un message plus court.");
+        return;
+      }
+      const data = await fileToData(new File([blob], "vocal.webm", {type:blob.type}));
+      if (recordingTarget === "dm" && activeDm) {
+        socket.emit("dm-message", {id:activeDm, type:"audio", content:data});
+      } else if (recordingTarget === "room") {
+        sendRoom("audio", data);
+      }
+      $("recordStatus").textContent = "";
+    };
+    recorder.start();
+    $("recordStatus").textContent = "Enregistrement... rappuie pour terminer";
+  } catch(e) {
+    alert("Autorise le micro dans ton navigateur et réessaie.");
+  }
+}
+$("record").onclick = () => startRecording("room");
+$("dmRecord").onclick = () => {
+  if (!activeDm) return alert("Ouvre d'abord une conversation privée.");
+  startRecording("dm");
+};
+
+// WebRTC : STUN permet les connexions directes, mais certains réseaux nécessitent un serveur TURN.
+const rtcConfig = {iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
+
+function addVideo(container, id, stream, muted=false) {
+  let tile = document.getElementById(id);
+  if (!tile) {
+    tile = document.createElement("div");
+    tile.className = "videoTile";
+    tile.id = id;
+    const video = document.createElement("video");
+    video.autoplay = true;
+    video.playsInline = true;
+    video.muted = muted;
+    tile.appendChild(video);
+    container.appendChild(tile);
+  }
+  const video = tile.querySelector("video");
+  video.srcObject = stream;
+  return tile;
+}
+function removeVideo(container, id) {
+  const el = document.getElementById(id);
+  if (el && container.contains(el)) el.remove();
+}
+async function getMedia(video) {
+  return navigator.mediaDevices.getUserMedia({audio:true, video:!!video});
+}
+
+// ----- Appels de groupe dans le salon -----
+async function startGroupCall(video) {
+  if (groupActive) return;
+  try {
+    groupStream = await getMedia(video);
+    groupActive = true;
+    groupVideoMode = !!video;
+    $("groupLeave").classList.remove("hidden");
+    addVideo($("callArea"), "group-local", groupStream, true);
+    socket.emit("group-call-join");
+  } catch(e) {
+    alert("Impossible d'accéder au micro ou à la caméra. Vérifie les autorisations.");
+  }
+}
+$("groupAudio").onclick = () => startGroupCall(false);
+$("groupVideo").onclick = () => startGroupCall(true);
+
+function makeGroupPeer(id) {
+  if (groupPeers.has(id)) return groupPeers.get(id);
+  const pc = new RTCPeerConnection(rtcConfig);
+  groupStream.getTracks().forEach(track => pc.addTrack(track, groupStream));
+  pc.onicecandidate = e => {
+    if (e.candidate) socket.emit("group-call-signal", {target:id, candidate:e.candidate});
   };
-  recorder.start();
-  alert("Enregistrement en cours. Il s'arrête dans 15 secondes. Appuie encore sur 🎙️ pour arrêter plus tôt.");
-  setTimeout(()=>{if(recorder&&recorder.state==="recording")recorder.stop()},15000);
- }catch(e){alert("Autorise le micro dans les paramètres du navigateur.")}
+  pc.ontrack = e => addVideo($("callArea"), "peer-" + id, e.streams[0]);
+  pc.onconnectionstatechange = () => {
+    if (["failed","closed","disconnected"].includes(pc.connectionState)) {
+      removeVideo($("callArea"), "peer-" + id);
+    }
+  };
+  groupPeers.set(id, pc);
+  return pc;
 }
-$("dmVoice").onclick=()=>voice(true);
-$("roomVoice").onclick=()=>voice(false);
-
-// Appels audio et vidéo via WebRTC
-function signal(data){socket.emit("call-signal",{...data,id:activeDm,target:activeTarget})}
-function makePeer(){
- pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
- pc.onicecandidate=e=>{if(e.candidate)signal({kind:"candidate",candidate:e.candidate})};
- pc.ontrack=e=>{$("remoteVideo").srcObject=e.streams[0]};
- pc.onconnectionstatechange=()=>{
-  $("callState").textContent=pc?.connectionState||"Connexion…";
-  if(pc&&["failed","disconnected","closed"].includes(pc.connectionState))endCall(false);
- };
- candidateQueue=[];
- return pc;
-}
-async function startCall(kind){
- if(!activeDm||!activeTarget)return alert("Ouvre une conversation privée d'abord.");
- try{
-  callKind=kind;
-  localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:kind==="video"});
-  $("callbox").classList.remove("hidden");
-  $("callTitle").textContent=(kind==="video"?"Appel vidéo avec ":"Appel audio avec ")+activeName;
-  $("localVideo").classList.toggle("hidden",kind!=="video");
-  $("localVideo").srcObject=localStream;
-  makePeer();localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
-  const offer=await pc.createOffer();await pc.setLocalDescription(offer);
-  signal({kind:"offer",offer,callKind:kind});
- }catch(e){alert("Impossible d'accéder au micro ou à la caméra. Vérifie les autorisations.");endCall(false)}
-}
-$("audioCall").onclick=()=>startCall("audio");
-$("videoCall").onclick=()=>startCall("video");
-
-socket.on("call-signal",async d=>{
- try{
-  if(d.kind==="offer"){
-   pendingOffer=d;
-   $("callTitle").textContent="Appel de "+d.fromName;
-   $("callState").textContent=d.callKind==="video"?"Appel vidéo entrant":"Appel audio entrant";
-   $("acceptCall").classList.remove("hidden");$("callbox").classList.remove("hidden");
-   callKind=d.callKind||"audio";return;
+socket.on("group-call-peers", async data => {
+  if (!groupActive) return;
+  for (const id of data.peers) {
+    const pc = makeGroupPeer(id);
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    socket.emit("group-call-signal", {target:id, description:pc.localDescription});
   }
-  if(d.kind==="reject"){endCall(false);return}
-  if(d.kind==="candidate"){
-   if(pc&&pc.remoteDescription)await pc.addIceCandidate(d.candidate);
-   else candidateQueue.push(d.candidate);
-   return;
-  }
-  if(d.kind==="answer"&&pc){
-   await pc.setRemoteDescription(d.answer);
-   for(const c of candidateQueue.splice(0))await pc.addIceCandidate(c);
-  }
- }catch(e){console.log("Signal d'appel:",e)}
 });
-$("acceptCall").onclick=async()=>{
- if(!pendingOffer)return;
- try{
-  const d=pendingOffer;pendingOffer=null;
-  activeDm=d.id;activeTarget=d.from;activeName=d.fromName;
-  localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:callKind==="video"});
-  $("acceptCall").classList.add("hidden");
-  $("localVideo").classList.toggle("hidden",callKind!=="video");$("localVideo").srcObject=localStream;
-  makePeer();localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
-  await pc.setRemoteDescription(d.offer);
-  for(const c of candidateQueue.splice(0))await pc.addIceCandidate(c);
-  const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
-  socket.emit("call-signal",{id:d.id,target:d.from,kind:"answer",answer});
- }catch(e){alert("Impossible de démarrer l'appel. Vérifie les autorisations.");endCall(false)}
-};
-function endCall(send=true){
- if(send&&activeDm&&activeTarget)signal({kind:"reject"});
- if(pc){pc.onconnectionstatechange=null;pc.close();pc=null}
- if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null}
- $("remoteVideo").srcObject=null;$("localVideo").srcObject=null;
- $("callbox").classList.add("hidden");$("acceptCall").classList.add("hidden");
- pendingOffer=null;candidateQueue=[];
+socket.on("group-call-peer-joined", data => {
+  if (groupActive) makeGroupPeer(data.id);
+});
+socket.on("group-call-signal", async data => {
+  if (!groupActive) return;
+  const pc = makeGroupPeer(data.from);
+  try {
+    if (data.description) {
+      await pc.setRemoteDescription(data.description);
+      if (data.description.type === "offer") {
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        socket.emit("group-call-signal", {target:data.from, description:pc.localDescription});
+      }
+    }
+    if (data.candidate) await pc.addIceCandidate(data.candidate);
+  } catch(e) {
+    console.warn("Signal de groupe non traité", e);
+  }
+});
+socket.on("group-call-peer-left", data => {
+  const pc = groupPeers.get(data.id);
+  if (pc) pc.close();
+  groupPeers.delete(data.id);
+  removeVideo($("callArea"), "peer-" + data.id);
+});
+function leaveGroupCall() {
+  socket.emit("group-call-leave");
+  groupActive = false;
+  groupPeers.forEach(pc => pc.close());
+  groupPeers.clear();
+  if (groupStream) groupStream.getTracks().forEach(t => t.stop());
+  groupStream = null;
+  $("callArea").innerHTML = "";
+  $("groupLeave").classList.add("hidden");
 }
-$("hangup").onclick=()=>endCall(true);
+$("groupLeave").onclick = leaveGroupCall;
+
+// ----- Appels privés -----
+function dmSignal(data) {
+  if (!activeDm || !activeTarget) return;
+  socket.emit("call-signal", {...data, id:activeDm, target:activeTarget});
+}
+async function startDmCall(video) {
+  if (!activeDm || !activeTarget) return alert("Choisis d'abord une conversation privée.");
+  if (dmPc) dmPc.close();
+  try {
+    dmStream = await getMedia(video);
+    dmPc = new RTCPeerConnection(rtcConfig);
+    dmStream.getTracks().forEach(t => dmPc.addTrack(t, dmStream));
+    addVideo($("dmCallArea"), "dm-local", dmStream, true);
+    dmPc.onicecandidate = e => {
+      if (e.candidate) dmSignal({candidate:e.candidate});
+    };
+    dmPc.ontrack = e => addVideo($("dmCallArea"), "dm-remote", e.streams[0]);
+    const offer = await dmPc.createOffer();
+    await dmPc.setLocalDescription(offer);
+    dmSignal({description:dmPc.localDescription, video:!!video});
+  } catch(e) {
+    alert("Impossible d'accéder au micro ou à la caméra.");
+  }
+}
+$("dmAudio").onclick = () => startDmCall(false);
+$("dmVideo").onclick = () => startDmCall(true);
+$("dmHangup").onclick = endDmCall;
+
+function endDmCall() {
+  if (dmPc) dmPc.close();
+  dmPc = null;
+  if (dmStream) dmStream.getTracks().forEach(t => t.stop());
+  dmStream = null;
+  $("dmCallArea").innerHTML = "";
+}
+socket.on("call-signal", async data => {
+  if (data.description?.type === "offer") {
+    if (!confirm(data.fromName + " t'appelle. Accepter ?")) {
+      socket.emit("call-signal", {id:data.id, target:data.from, reject:true});
+      return;
+    }
+    activeDm = data.id;
+    activeTarget = data.from;
+    if (dmPc) endDmCall();
+    try {
+      dmStream = await getMedia(!!data.video);
+      dmPc = new RTCPeerConnection(rtcConfig);
+      dmStream.getTracks().forEach(t => dmPc.addTrack(t, dmStream));
+      addVideo($("dmCallArea"), "dm-local", dmStream, true);
+      dmPc.onicecandidate = e => {
+        if (e.candidate) dmSignal({candidate:e.candidate});
+      };
+      dmPc.ontrack = e => addVideo($("dmCallArea"), "dm-remote", e.streams[0]);
+      await dmPc.setRemoteDescription(data.description);
+      const answer = await dmPc.createAnswer();
+      await dmPc.setLocalDescription(answer);
+      dmSignal({description:dmPc.localDescription});
+    } catch(e) {
+      alert("Impossible de rejoindre l'appel.");
+      endDmCall();
+    }
+  } else if (data.reject) {
+    alert("L'appel a été refusé.");
+    endDmCall();
+  } else if (dmPc && data.description) {
+    await dmPc.setRemoteDescription(data.description);
+  } else if (dmPc && data.candidate) {
+    try { await dmPc.addIceCandidate(data.candidate); } catch(e) {}
+  }
+});
 </script>
 </body>
-  </html>
+ </html>
+
